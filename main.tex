@@ -1,0 +1,282 @@
+\documentclass[oribibl]{llncs}
+
+%\usepackage{pslatex}
+
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathpartir} % ./
+\usepackage{color}
+\usepackage{xspace} 
+\usepackage[pdftex]{graphicx}
+%\usepackage[small]{caption}
+\usepackage{fancybox}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{comment}
+\usepackage{listing}
+\usepackage{colortbl}
+
+%\usepackage{times}
+\usepackage{framed}
+\usepackage{lineno}
+
+\input{macros}
+\renewcommand{\shadowsize}{1pt}
+
+\begin{document}
+
+\title{Conflicts, Models and Heuristics for Quantifier Instantiation in SMT}
+
+\author {Andrew Reynolds\inst{1}}
+
+\institute{
+Department of Computer Science, The University of Iowa, USA
+}
+\maketitle
+
+\pagestyle{plain}
+%\pagestyle{empty}
+
+\begin{abstract}
+[SMT solvers]
+[Quantifier Instantiation]
+[Techniques for UF]
+[New techniques for theories]
+[Summary]
+\end{abstract}
+
+\section{Introduction}
+
+[SMT solvers now handle quantifiers]
+
+[Important in Applications]
+
+The use of quantified formulas is highly important in a number of applications,
+including automated theorem proving, software verification, synthesis, and planning.
+
+[Challenging in Theories]
+
+[Handled well in Practice]
+In spite of the theoretical challenges, many uses of quantified formulas
+can be handled well in practice by modern automated theorem provers and SMT solvers.
+
+[Landscape]
+
+[Overview]
+
+\section{Support for Quantified Formulas in an SMT Solver}
+
+Most modern SMT solvers are based on the DPLL($T$) solving architecture,
+where a set of decision procedures for $T$ are modularly combined with a SAT solver for propositional satisfiability~\cite{}.
+Given a set of $T$-formulas $\Gamma$ as input to a DPLL($T$)-based SMT solver, its underlying SAT solver
+abstracts each $T$-literal in $\Gamma$ as unique Boolean variable.
+The SAT solver clausifies $\Gamma$ and returns that 
+either $\Gamma$ is propositionally unsatisfiable (in which case it is also $T$-unsatisfiable),
+or returns a set of literals $M$ that propositionally entail it.
+We write $M \models_p \Gamma$ to denote this case, and refer to $M$ as a satisfying assignment for $\Gamma$.
+It then uses a decision procedure for $T$ to
+check the $T$-satisfiability of $M$, that is, whether there exists of model of $M$ that is consistent according to theory $T$.
+If $M$ is $T$-satisfiable, then we may conclude that $\Gamma$ is $T$-satisfiable.
+Otherwise, it returns a subset $C$ of $M$ that is $T$-unsatisfiable and adds the clause $\neg C$ to $\Gamma$,
+which is often referred to as a conflict clause.
+
+%In DPLL($T$), each theory literal and closed universally quantified formula is abstracted as a unique Boolean variable.
+%The underlying SAT solver 
+
+DPLL($T$)-based SMT solvers have been extended in the past decade with approaches for univeral and existential quantification~\cite{}.
+For consistency, in this paper we assume all existential quantification is rewritten to universal quantification by the rewrite:
+\[
+\exists \vec x\, P( \vec x ) \transform \neg \forall \vec x\, \neg P( \vec x )
+\]
+In a DPLL($T$)-based approach for quantified formulas, 
+each closed (universally) quantified formula is abstracted as a Boolean variable by the SAT solver as well.
+
+\begin{example}
+Consider the set of $UFLIA$-formulas:
+
+\end{example}
+
+
+\begin{comment}
+\begin{enumerate}
+\item If $\Gamma$ is propositionally unsatisfiable
+\begin{enumerate}
+\item[\ ] return ``unsat".
+\end{enumerate}
+\item[\ ] Otherwise, let $M$ be a set of literals such that $M \models_p \Gamma$.
+\item[\ ] If $M$ is $T$-unsatisfiable
+\begin{enumerate}
+\item[\ ] return $\funcsmtsolve( \Gamma \cup \neg C )$ for some $T$-unsatisfiable $C \subseteq M$.
+\end{enumerate}
+\item[\ ] Otherwise, let $( r, L ) = \funcqi( M \backslash \quants{M}, \quants{M} )$.
+\item[\ ] If $r$ is ``unknown"
+\begin{enumerate}
+\item[\ ] return $\funcsmtsolve( \Gamma \cup L )$.
+\end{enumerate}
+\item Otherwise, return ``sat".
+\end{enumerate}
+\end{comment}
+
+
+
+\begin{figure}[t]
+\begin{framed}
+\begin{internallinenumbers}
+$\funcsmtsolve( \Gamma )$:
+\begin{enumerate}
+\item[\ ] If $\Gamma$ is propositionally unsatisfiable,
+\begin{enumerate}
+\item[\ ] return ``unsat".
+\end{enumerate}
+\item[\ ] Otherwise, let $M = E \uplus Q$ be a set of literals such that $M \models_p \Gamma$.
+\item[\ ] If $E$ is $T$-unsatisfiable,
+\begin{enumerate}
+\item[\ ] return $\funcsmtsolve( \Gamma \cup \neg C )$ for some $T$-unsatisfiable $C \subseteq E$.
+\end{enumerate}
+\item[\ ] Otherwise, let $( r, L ) = \funcqi( E, Q )$.
+\item[\ ] If $r$ is ``unknown",
+\begin{enumerate}
+\item[\ ] return $\funcsmtsolve( \Gamma \cup L )$.
+\end{enumerate}
+\item[\ ] Otherwise, return ``sat".
+\end{enumerate}
+$\funcqi( E, Q )$:
+\begin{enumerate}
+\item[\ ] Do one of the following:
+\begin{enumerate}
+\item[\ ] Return $( \text{``sat"}, \emptyset )$, if $E \cup Q$ is $T$-satisfiable.
+\item[\ ] Return $( \text{``unknown"}, L )$ for some set $L$ of $T$-lemmas.
+\end{enumerate}
+\end{enumerate}
+\end{internallinenumbers}
+\end{framed}
+\vspace{-2ex}
+\caption{An abstract procedure for $T$-inputs $\Gamma_0$ with quantified formulas in an SMT solver.
+In Line 5, $E$ is quantifier-free, and the atoms of each literal in $Q$ are universally quantified formulas.
+\label{fig:smtq}}
+\end{figure}
+
+Figure~\ref{fig:smtq} gives an abstract procedure $\funcsmtsolve$
+for establishing the $T$-satisfiability of a set of $T$-formulas $\Gamma$ possibly containing universal quantification.
+Lines 2 through 6 correspond to a DPLL($T$)-based approach for quantifier-free inputs.
+In Line 5, we partition $M$ into two parts $E$ and $Q$,
+where $E$ is quantifier-free and the atoms of literals in $Q$ are universally quantified formulas.
+If the quantifier-free portion is $T$-satisfiable,
+we proceed to Line 7, which invokes the procedure $\funcqi$ on $E$ and $Q$.
+Abstractly, this procedure either may determine that $E \cup Q$ is $T$-satisfiable and return the pair $( \text{``sat"}, \emptyset )$,
+or otherwise will return ( ``unknown", $L$ ), where $L$ is a set of formulas that are valid in theory $T$,
+after which the procedure $\funcsmtsolve$ either terminates with ``sat" or adds $L$ to $\Gamma$ and repeats.
+
+Designing support for quantified formulas in DPLL($T$)-based SMT solvers 
+thus depends on how the function $\funcsmtsolve$ is implemented.
+When doing so, recurrent questions include:
+\begin{itemize}
+\item How can we establish that $E \cup Q$ is $T$-satisfiable (when $Q$ is non-empty)?
+\item What lemmas $L$ should we return?
+\end{itemize}
+The remainder of this paper will focus on these questions.
+
+It is important to note that some SMT approaches to quantified formulas~\cite{}
+reason about quantified formulas \emph{eagerly} during the DPLL($T$) search.
+In terms of Figure~\ref{fig:smtq}, these approaches invoke $\funcqi$
+for sets $M$ that are incomplete and do not necessarily propositinally entail all formulas in $\Gamma$.
+The advantage of doing so is that lemmas returned by $\funcqi$ may help prune the search,
+while the disadvantage is that calling $\funcqi$ may be expensive and lead to non-termination.
+For simplicity, we assume a lazy approach for handling quantified formulas in this paper.
+
+\subsection{Skolemization and Instantiation}
+
+
+\section{E-matching}
+
+[Introduction]
+
+[Example]
+
+[Extension to EUF]
+
+[Intuition]
+
+\subsection{Pattern Selection}
+
+\subsection{Challenge: Too Many Instances}
+
+[Data]
+
+[Non-termination]
+
+\subsection{Challenge: Incompleteness}
+
+[Example]
+
+[Pencil-and-paper]
+
+\section{Conflict-Based Instantiation}
+
+[Introduction]
+
+[Example]
+
+[Extension to EUF]
+
+[Intuition]
+
+\subsection{Impact}
+
+\subsection{Challenge: Finding Conflicting Instances}
+
+\section{Model-Based Instantiation}
+
+[Introduction]
+
+[Example]
+
+\subsection{Impact}
+
+\subsection{Completeness}
+
+[Fixed-finite, finite, finite instantiation]
+
+\subsection{Challenge: Constructing Models}
+
+[Example]
+
+\section{Counterexample-Guided Instantiation}
+
+[Restate challenges]
+
+[Quantifier Elimination]
+
+[Basic idea]
+
+[Example]
+
+[Results]
+
+\section{Summary}
+
+[for UF]
+
+[for no UF]
+
+\section{Future Work}
+
+[Engineering existing]
+
+[Counterexample-guided for theories]
+
+[Combining E-matching + counterexample-guided]
+
+\bibliographystyle{abbrv}
+\bibliography{main}
+
+
+\end{document}
+
+
+
+
+
+

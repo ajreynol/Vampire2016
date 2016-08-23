@@ -1,0 +1,133 @@
+%!TEX root =  main.tex
+
+\newcommand{\cvc}{\textsc{cvc}{\small 4}\xspace}
+\newcommand{\cvciii}{\textsc{cvc}{\small 3}\xspace}
+\newcommand{\ziii}{\textsc{z}{\small 3}\xspace}
+\newcommand{\teq}{\approx}
+\newcommand{\cc}[1]{#1^*}
+\newcommand{\M}{\mathcal{M}}
+\def\AIF{\qtab\keyword{if}\ }
+\def\THEN{\ \keyword{then}\ }
+\def\AELSE{\untab\qtab\keyword{else}\ }
+\def\FI{\untab}
+\def\RETURN{\keyword{return}\ }
+\def\ENDPROC{\untab}
+%\newtheorem{remark}{Remark}
+
+
+\newcommand{\define}[1]{\textsl{#1}}
+\newcommand{\defas}{\stackrel{\mathrm{def}}{=}}
+
+\newcommand{\rem}[1]{\textcolor{magenta}{[#1]}}
+\newcommand{\remvk}[1]{\textcolor{red}{[#1]}}
+\newcommand{\ct}[1]{\rem{#1 --ct}}
+\newcommand{\ajr}[1]{\rem{#1 --ajr}}
+\newcommand{\vk}[1]{\remvk{#1 --vk}}
+
+\newcommand{\terms}{\mathbf{T}}
+\newcommand{\sorts}{\mathbf{S}}
+\newcommand{\vals}{\mathbf{V}}
+\newcommand{\vars}{\mathbf{X}}
+%\newcommand{\sorts}{\mathsf{sort}}
+\newcommand{\funcs}{\mathsf{func}}
+
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\J}{\mathcal{J}}
+\newcommand{\Iu}{I}
+\newcommand{\mods}{\mathbf{I}}
+\newcommand{\lan}{\mathbf{L}}
+\newcommand{\qlan}[1]{\mathcal{Q}( #1 )}
+\newcommand{\props}{\mathbf{P}}
+
+\newcommand{\modsof}[2]{{\llbracket {#1} \rrbracket}_{#2}}
+
+\newcommand{\ent}[1][]{\models_{#1}}
+\newcommand{\tent}{\ent[T]}
+
+\newcommand{\ssorts}[1]{#1^\mathrm{s}}
+\newcommand{\sfuns}[1]{#1^\mathrm{f}}
+
+\newcommand{\con}[1]{\mathsf{#1}}
+\newcommand{\Bool}{\con{Bool}}
+\newcommand{\Int}{\con{Int}}
+\newcommand{\Real}{\con{Real}}
+\newcommand{\ite}{\con{ite}}
+\newcommand{\ev}{\con{ev}}
+\newcommand{\size}{\con{size}}
+
+\newcommand{\TD}{T_\mathrm{D}}
+
+\newcommand{\ltrue}{\top}
+\newcommand{\lfalse}{\bot}
+
+\newcommand{\euf}{\ensuremath{\mathrm{E}}\xspace}
+\newcommand{\tra}{\ensuremath{\mathrm{RA}}\xspace}
+\newcommand{\tia}{\ensuremath{\mathrm{IA}}\xspace}
+\newcommand{\lra}{\ensuremath{\mathrm{LRA}}\xspace}
+\newcommand{\lia}{\ensuremath{\mathrm{LIA}}\xspace}
+\newcommand{\lira}{\ensuremath{\mathrm{LIRA}}\xspace}
+\newcommand{\larel}{\bowtie}
+
+\newcommand{\nmf}[1]{#1\negthinspace\downarrow}
+\newcommand{\interp}[1]{[ \negthinspace [ #1 ] \negthinspace ]}
+
+\newtheorem{thm}{Theorem}
+\newtheorem{cor}{Corollary}
+\newtheorem{lem}{Lemma}
+\newtheorem{defn}{Definition}
+%\newtheorem{claim}{Claim}
+
+\newcommand{\procslra}{\mathcal{S}_{\lra}}
+\newcommand{\procslrah}{S_R}
+\newcommand{\procslrahh}{S_{R0}}
+\newcommand{\procsslra}{\mathcal{S}_{S\lra}}
+\newcommand{\procslia}{\mathcal{S}_{\lia}}
+\newcommand{\procsliah}{S_I}
+\newcommand{\procsliahh}{S_{I0}}
+\newcommand{\procsslia}{\mathcal{S}_{s\lia}}
+\newcommand{\procslira}{\mathcal{S}_{\lira}}
+\newcommand{\procslirah}{S_{IR}}
+\newcommand{\procslirahh}{S_{IR0}}
+
+\newcommand{\opdivd}{\small\mathsf{div}}
+\newcommand{\opdivl}{\small\mathsf{div}^{-}}
+\newcommand{\opdivu}{\small\mathsf{div}^{+}}
+\newcommand{\opmod}{\xspace \mathsf{mod} \xspace}
+\newcommand{\oplcm}{\xspace \mathsf{lcm} \xspace}
+\newcommand{\opdivides}{\xspace \mid \xspace}
+\newcommand{\opliapol}{b}
+\newcommand{\optoint}{\small\mathsf{to\_int}}
+
+\newcommand{\funcsolve}{\small\mathsf{solve}}
+\newcommand{\funcsmtsolve}{\small\mathsf{DPLL_{\forall, T}}}
+\newcommand{\funcqi}{\small\mathsf{check}_\forall}
+
+\newcommand{\Set}[1]{\left\{#1\right\}}
+\newcommand{\parens}[1]{\left(#1\right)}
+\newcommand{\tuple}[1]{\left\langle#1\right\rangle}
+
+\newcommand{\bigor}{\bigvee}
+\newcommand{\bigand}{\bigand}
+
+\newcommand{\divides}{\mid}
+\newcommand{\notdivides}{\nmid}
+\newcommand{\fvars}{FV}
+
+\newcommand{\normalize}[1]{{#1}\!\!\downarrow}
+\newcommand{\intnormalize}[1]{{#1}\!\!\downarrow_{\Int}}
+\newcommand{\unnormalize}[2]{{#1}\!\!\updownarrow^{#2}}
+\newcommand{\approxg}[2]{{#1}\!\!\mid_{#2}}
+
+\newcommand{\transform}{\ \leadsto \ }
+
+\newcommand{\purify}[1]{\lfloor #1 \rfloor}
+\newcommand{\purifyrec}[1]{\purify{#1}^\ast}
+\newcommand{\purifyg}[3]{\purify{#1}_{(#2,#3)}}
+\newcommand{\unpurify}[1]{\lceil #1 \rceil}
+\newcommand{\quants}[1]{\mathcal{Q}(#1)}
+\newcommand{\guardspos}[1]{\mathcal{A}(#1)}
+\newcommand{\guardsneg}[1]{\mathcal{B}(#1)}
+\newcommand{\activequants}[2]{\mathrm{Q}(#1,#2)}
+\newcommand{\lits}{\#\mathsf{lits}}
+\newcommand{\opmax}{\mathsf{max}}
+\newcommand{\opmin}{\mathsf{min}}

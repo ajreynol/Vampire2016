@@ -1,0 +1,10 @@
+Conflicts, Models, and Heuristics: Techniques for Quantifier Instantiation in SMT
+
+
+While originally targeted at quantifier-free inputs,
+SMT solvers have recently gained popularity for inputs with first-order quantification
+
+
+This paper 
+
+
