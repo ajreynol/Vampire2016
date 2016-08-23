@@ -174,7 +174,7 @@ or otherwise will return ( ``unknown", $L$ ), where $L$ is a set of formulas tha
 after which the procedure $\funcsmtsolve$ either terminates with ``sat" or adds $L$ to $\Gamma$ and repeats.
 
 Designing support for quantified formulas in DPLL($T$)-based SMT solvers 
-thus depends on how the function $\funcsmtsolve$ is implemented.
+primarily depends on how the function $\funcqi$ is implemented.
 We will examine such an implementation in this paper, in particular addressing the questions:
 \begin{itemize}
 \item How can we establish that $E \cup Q$ is $T$-satisfiable (when $Q$ is non-empty)?
@@ -227,42 +227,101 @@ E-matching does the following for each $\forall \vec x\, \varphi$ occurring in $
 \begin{enumerate}
 \item Compute a set of pairs $(\vec t_{1},g_{1}), \ldots, (\vec t_{n}, g_{n})$ 
 where for each $i = 1, \ldots, n$, we have that $g_i$ is a ground term from $E$ such that $E \models_T g_{i} = p_j[ \vec t_{i} ]$.
-\item Add the lemmas $\forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{1}], \ldots, \forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{n}]$ to $L$.
+\item Return the lemmas $\forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{1}], \ldots, \forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{n}]$.
 \end{enumerate}
 \end{enumerate}
 
 In other words, we first select some set of pattern terms, which are often some of the subterms of $\varphi$.
 For each of these patterns $p_j[ \vec x ]$, we compute a set of pairs of the form $( \vec t_i, g_i )$ where 
 $g_i$ is equivalent to $p_j[ \vec t_i ]$ under the assumption that $E$ holds.
-We then add instantiation lemmas corresponding to each of these pairs.
+We then return instantiation lemmas corresponding to each of these pairs. 
+In the context of Figure~\ref{fig:smtq}, these lemmas are included in the return value of $\funcqi$ (set $L$).
+Notice in this description, we write $E \models_T g_{i} = p_j[ \vec t_{i} ]$ to denote that $E$ entails
+$g_{i} = p_j[ \vec t_{i} ]$ modulo theory $T$.  In typical E-matching implementations, $T$ is limited to the theory of uninterpreted functions and equality.
 We demonstrate this technique in the following examples.
 
 \begin{example}
-Let $E$ be the set $\{ P(a), \neg P(b), R(c), \neg R(a), S(e) \}$, and $Q$ be the set $\{ \forall x\, P( x ) \vee R( x ) \}$.
-
+\label{ex:em2}
+Let $E$ be the set $\{ P(a), \neg P(b), R(c), \neg R(a), S(d) \}$ where $a,b,c,d$ are free constants and $P,R,S$ are unary predicates.
+Let $\psi$ be the quantified formula $\forall x\, P( x ) \vee R( x )$.
+Say we choose the pattern terms $P( x )$ and $R( x )$ for $\psi$.
+In Step 2, we compute the pairs $( a, P( a ) ), ( b, P( b ) )$ for $P( x )$ and
+$( a, R( a ) ), ( c, R( c ) )$ for $R( x )$.
+Overall, E-matching returns the lemmas:
+\[
+\psi \Rightarrow P( a ) \vee R( a ), \psi \Rightarrow P( b ) \vee R( b ), \psi \Rightarrow P( c ) \vee R( c )
+\]
+\qed
 \end{example}
 
 \begin{example}
-E-matching also takes into account 
+\label{ex:em2}
+E-matching also takes into account matching modulo equality.
+For example, let $E$ be the set $\{ P( a, c ), f( b ) = a \}$,
+let $\psi$ be the formula $\forall xy\, P( f( x ), y ) \Rightarrow g( x ) = y$,
+and let $P( f( x ), y )$ be a pattern for it.
+We may consider the pair $( ( b, c ), P( a, c ) )$, which is such that $E \models_\euf P( a, c ) = P( f( b ), c )$ since $f( b ) = a \in E$.
+Thus, E-matching in this example returns the lemma:
+\[
+\psi \Rightarrow ( P( f( b ), c ) \Rightarrow g( b ) = c
+\]
+\qed
 \end{example}
-[Extension to EUF]
 
-[Intuition]
+Recall in function $\funcqi$, we are interested in the (un)satisfiability of $E \cup Q$.
+As mentioned, E-matching selects instantiation lemmas based on pattern matching.
+It is typically very effective for establishing unsatisfiability.
+The intuition for its effectiveness is the following. 
+Let $\psi$ be a formula in $Q$ of the form $\forall \vec x\, \varphi[ p[ \vec x ], \vec x ]$, 
+that is, $p[ \vec x ]$ is a subterm of $\psi$,
+Assume $p[ \vec x ]$ is selected as a pattern for $\psi$, and
+that a ground term $g$ from $E$ is such that $E \models_T g = p[ \vec t ]$.
+This furthermore implies that $E, \varphi[ p[ \vec t ], \vec t ] \models_T \varphi[ g, \vec t ]$,
+that is, by adding an instance of $\psi$ to $E$ we learn that $\varphi[ g, \vec t ]$ holds as well.
+%The effect of learning the instantiation $\varphi[ p[ \vec t ], \vec t ]$ 
+%suffices to learn $\varphi[ g, \vec t ]$ under the assumption of $E$,
+%that is, $E, \varphi[ p[ \vec t ], \vec t ] \models_T \varphi[ g, \vec t ]$.
+In other words, when using E-matching for selecting instances of quantified formulas from $Q$, 
+{\bf we learn information about ground terms in $E$}.
+% i.e. the formula $\varphi[ g, \vec t ]$.
+For instance in Example~\ref{ex:em2}, the instantiation lemma returned by E-matching tells us
+that the ground term $P( a, c )$ from $E$ entails $g( b ) = c$, under the assumption that $E$ holds.
+We further comment on this intuition in Section~\ref{sec:cbqi}.
 
 \subsection{Pattern Selection}
-There is no standard  selecting which patterns to process with E-matching.
+There is no standard way to determine which patterns to select in E-matching.
+The performance of SMT solvers is highly dependent upon having a good pattern selection, as noted in recent work~\cite{}.
+
+
 
 \subsection{Challenge: Too Many Instances}
 
 [Data]
 
 [Non-termination]
+\begin{example}
+
+\end{example}
 
 \subsection{Challenge: Incompleteness}
 
-[Example]
+If E-matching fails to return any instantiation lemmas,
+this does not imply that $E \cup Q$ is satisfiable, as demonstrated in the following simple example.
+
+\begin{example}
+Let $E$ be $\emptyset$ and let $Q = \{ \forall x\, P( x ), \forall x\, \neg P( x ) \}$.
+Any pattern selection for the quantified formuls in $Q$ will fail to produce any instantiation lemmas,
+since there are no ground terms in $E$.
+However, $Q$ clearly is $T$-unsatisfiable.
+\qed
+\end{example}
+
 
 [Pencil-and-paper]
+
+\ 
+
+
 
 \section{Conflict-Based Instantiation}
 \label{sec:cbqi}
