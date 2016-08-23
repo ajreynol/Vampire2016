@@ -83,8 +83,11 @@ superposition-based theorem proving in an approach known as AVATAR~\cite{}.
 
 This paper will focus primarily on recent techniques for quantifier instantiation in SMT solvers.
 In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers with support for quantified formulas.
-Sections~\ref{sec:ematching},~\ref{sec:cbqi}, and~\ref{sec:mbqi} will overview modern general-purpose techniques 
-for quantifier instantiation in SMT.
+%Sections~\ref{sec:ematching}-~\ref{sec:mbqi} will overview modern general-purpose techniques 
+%for quantifier instantiation in SMT.
+Section~\ref{sec:ematching} will discuss general-purpose and incomplete methods for handling quantified formulas in SMT.
+Section~\ref{sec:cbqi} will examine how finding \emph{conflicts} can improve the ability of the techniques for answering ``unsat",
+and Section~\ref{sec:mbqi} will examine how constructing \emph{candidate models} can enable the solver to answer ``sat".
 Section~\ref{sec:cegqi} introduces further techniques for quantifier instantiation in SMT that 
 are specialized to theories.
 Finally, we conclude in Section~\ref{sec:conclusion} with a summary and mention possible future work.
@@ -172,15 +175,14 @@ after which the procedure $\funcsmtsolve$ either terminates with ``sat" or adds 
 
 Designing support for quantified formulas in DPLL($T$)-based SMT solvers 
 thus depends on how the function $\funcsmtsolve$ is implemented.
-When doing so, recurrent questions include:
+We will examine such an implementation in this paper, in particular addressing the questions:
 \begin{itemize}
 \item How can we establish that $E \cup Q$ is $T$-satisfiable (when $Q$ is non-empty)?
 \item What lemmas $L$ should we return?
 \end{itemize}
-The remainder of this paper will focus on these questions.
 
-It is important to note that some SMT approaches to quantified formulas~\cite{}
-reason about quantified formulas \emph{eagerly} during the DPLL($T$) search.
+It is important to note that some SMT approaches to quantified formulas
+reason about quantified formulas \emph{eagerly} during the DPLL($T$) search~\cite{}.
 In terms of Figure~\ref{fig:smtq}, these approaches invoke $\funcqi$
 for sets $M$ that are incomplete and do not necessarily propositinally entail all formulas in $\Gamma$.
 The advantage of doing so is that lemmas returned by $\funcqi$ may help prune the search,
@@ -188,22 +190,67 @@ while the disadvantage is that calling $\funcqi$ may be expensive and lead to no
 For simplicity, we assume a lazy approach for handling quantified formulas.
 
 \subsection{Skolemization and Instantiation}
-
+Common implementations of $\funcqi( E, Q )$ in SMT solvers return sets $L$ consisting of $T$-lemmas of two forms:
+\begin{enumerate}
+\item $\neg \forall \vec x\, P( \vec x ) \Rightarrow \neg P( \vec k )$, where $\vec k$ is a set of fresh \emph{Skolem} variables, and
+\item $\forall \vec x\, P( \vec x ) \Rightarrow P( \vec t )$, where $\vec t$ is a tuple of ground terms as the same sort as $\vec x$.
+\end{enumerate}
+Lemmas of the first type, which we refer to as \emph{Skolemization lemmas},
+ witness the negation of universally quantified formulas for a fresh set of variables $\vec{k}$,
+are returned for each quantified formula whose negation occurs in $Q$.
+Notice that such lemmas need only be added once per quantified formula.
+Lemmas of the second type, which we refer to as \emph{instantiation lemmas},
+infer an instance of a universally quantified formula for some tuple of ground terms $\vec{ t }$.
+In contrast, multiple lemmas of this form may be added per quantified formula.
+The performance of the solver is highly dependent on a having a good strategy for selecting instantiation lemmas.
+We examine various quantifier instantiation strategies in Sections~\ref{sec:ematching}-~\ref{sec:cegqi}.
 
 \section{E-matching}
 \label{sec:ematching}
 
-[Introduction]
 The most widely used technique for quantifier instantiation in SMT a heuristic technique known as \emph{E-matching}.
+It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{}.
+Recently, variants of the approach have been implemented in a number of successful SMT solvers~\cite{}.
+The support for E-matching in these solvers is critical to the success of high-level reasoning tools for 
+software verfication~\cite{} and automated theorem proving~\cite{}.
 
+E-matching chooses instances for quantified formulas $\forall \vec x\, \varphi$
+based on \emph{pattern} terms whose free variables are $\vec x$.
+We will write $p[ \vec x ]$ to denote a term whose free variables are $\vec x$.
+%Formally, 
+%we say that a ground term $g$ matches $p$ modulo $E$ under substitution $\{ \vec x \mapsto \vec t \}$ if $E \models_T g = p \{ \vec x \mapsto \vec t \}$.
+In detail, 
+E-matching does the following for each $\forall \vec x\, \varphi$ occurring in $Q$:
+\begin{enumerate}
+\item Choose a set of patterns $p_1[ \vec x ], \ldots, p_m[ \vec x ]$.
+\item For each $j = 1, \ldots, m$,
+\begin{enumerate}
+\item Compute a set of pairs $(\vec t_{1},g_{1}), \ldots, (\vec t_{n}, g_{n})$ 
+where for each $i = 1, \ldots, n$, we have that $g_i$ is a ground term from $E$ such that $E \models_T g_{i} = p_j[ \vec t_{i} ]$.
+\item Add the lemmas $\forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{1}], \ldots, \forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{n}]$ to $L$.
+\end{enumerate}
+\end{enumerate}
 
-[Example]
+In other words, we first select some set of pattern terms, which are often some of the subterms of $\varphi$.
+For each of these patterns $p_j[ \vec x ]$, we compute a set of pairs of the form $( \vec t_i, g_i )$ where 
+$g_i$ is equivalent to $p_j[ \vec t_i ]$ under the assumption that $E$ holds.
+We then add instantiation lemmas corresponding to each of these pairs.
+We demonstrate this technique in the following examples.
 
+\begin{example}
+Let $E$ be the set $\{ P(a), \neg P(b), R(c), \neg R(a), S(e) \}$, and $Q$ be the set $\{ \forall x\, P( x ) \vee R( x ) \}$.
+
+\end{example}
+
+\begin{example}
+E-matching also takes into account 
+\end{example}
 [Extension to EUF]
 
 [Intuition]
 
 \subsection{Pattern Selection}
+There is no standard  selecting which patterns to process with E-matching.
 
 \subsection{Challenge: Too Many Instances}
 
