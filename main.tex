@@ -50,23 +50,47 @@ Department of Computer Science, The University of Iowa, USA
 \section{Introduction}
 
 [SMT solvers now handle quantifiers]
+Satisifiability Modulo Theories (SMT) solvers 
 
 [Important in Applications]
 
 The use of quantified formulas is highly important in a number of applications,
-including automated theorem proving, software verification, synthesis, and planning.
+including automated theorem proving~\cite{}, software verification~\cite{}, synthesis~\cite{}, and planning~\cite{}.
 
-[Challenging in Theories]
+[Challenging in Theory]
+
 
 [Handled well in Practice]
-In spite of the theoretical challenges, many uses of quantified formulas
+In spite of the theoretical challenges, quantified formulas
 can be handled well in practice by modern automated theorem provers and SMT solvers.
 
-[Landscape]
 
-[Overview]
+A growing number of modern tools exist for reasoning about first-order quantified formulas.
+A number of automated theorem provers,
+(such as Vampire~\cite{}, E~\cite{}, and SPASS~\cite{}), were originally developed to target 
+quantified formulas in single-sorted first-order logic.
+More recently, these solvers have been exten
+For the most part, theorem provers from this community are superposition-based,
+although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{}.
+
+Conversely, SMT solvers (such as CVC~\cite{}, Yices~\cite{}, and Z3~\cite{}), 
+were originally developed to target quantifier-free formulas in background theories,
+but have more recently been extended with support for universally quantified formulas.
+The approaches here are mostly instantiation-based based~\cite{},
+although some approaches are based on superposition~\cite{}.
+SAT and SMT solvers for quantifier-free formulas have also been leveraged in
+superposition-based theorem proving in an approach known as AVATAR~\cite{}.
+
+This paper will focus primarily on recent techniques for quantifier instantiation in SMT solvers.
+In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers with support for quantified formulas.
+Sections~\ref{sec:ematching},~\ref{sec:cbqi}, and~\ref{sec:mbqi} will overview modern general-purpose techniques 
+for quantifier instantiation in SMT.
+Section~\ref{sec:cegqi} introduces further techniques for quantifier instantiation in SMT that 
+are specialized to theories.
+Finally, we conclude in Section~\ref{sec:conclusion} with a summary and mention possible future work.
 
 \section{Support for Quantified Formulas in an SMT Solver}
+\label{sec:quant}
 
 Most modern SMT solvers are based on the DPLL($T$) solving architecture,
 where a set of decision procedures for $T$ are modularly combined with a SAT solver for propositional satisfiability~\cite{}.
@@ -94,32 +118,9 @@ In a DPLL($T$)-based approach for quantified formulas,
 each closed (universally) quantified formula is abstracted as a Boolean variable by the SAT solver as well.
 
 \begin{example}
-Consider the set of $UFLIA$-formulas:
+Consider the set of $\uflia$-formulas:
 
 \end{example}
-
-
-\begin{comment}
-\begin{enumerate}
-\item If $\Gamma$ is propositionally unsatisfiable
-\begin{enumerate}
-\item[\ ] return ``unsat".
-\end{enumerate}
-\item[\ ] Otherwise, let $M$ be a set of literals such that $M \models_p \Gamma$.
-\item[\ ] If $M$ is $T$-unsatisfiable
-\begin{enumerate}
-\item[\ ] return $\funcsmtsolve( \Gamma \cup \neg C )$ for some $T$-unsatisfiable $C \subseteq M$.
-\end{enumerate}
-\item[\ ] Otherwise, let $( r, L ) = \funcqi( M \backslash \quants{M}, \quants{M} )$.
-\item[\ ] If $r$ is ``unknown"
-\begin{enumerate}
-\item[\ ] return $\funcsmtsolve( \Gamma \cup L )$.
-\end{enumerate}
-\item Otherwise, return ``sat".
-\end{enumerate}
-\end{comment}
-
-
 
 \begin{figure}[t]
 \begin{framed}
@@ -184,14 +185,17 @@ In terms of Figure~\ref{fig:smtq}, these approaches invoke $\funcqi$
 for sets $M$ that are incomplete and do not necessarily propositinally entail all formulas in $\Gamma$.
 The advantage of doing so is that lemmas returned by $\funcqi$ may help prune the search,
 while the disadvantage is that calling $\funcqi$ may be expensive and lead to non-termination.
-For simplicity, we assume a lazy approach for handling quantified formulas in this paper.
+For simplicity, we assume a lazy approach for handling quantified formulas.
 
 \subsection{Skolemization and Instantiation}
 
 
 \section{E-matching}
+\label{sec:ematching}
 
 [Introduction]
+The most widely used technique for quantifier instantiation in SMT a heuristic technique known as \emph{E-matching}.
+
 
 [Example]
 
@@ -214,6 +218,7 @@ For simplicity, we assume a lazy approach for handling quantified formulas in th
 [Pencil-and-paper]
 
 \section{Conflict-Based Instantiation}
+\label{sec:cbqi}
 
 [Introduction]
 
@@ -228,6 +233,7 @@ For simplicity, we assume a lazy approach for handling quantified formulas in th
 \subsection{Challenge: Finding Conflicting Instances}
 
 \section{Model-Based Instantiation}
+\label{sec:mbqi}
 
 [Introduction]
 
@@ -244,6 +250,7 @@ For simplicity, we assume a lazy approach for handling quantified formulas in th
 [Example]
 
 \section{Counterexample-Guided Instantiation}
+\label{sec:cegqi}
 
 [Restate challenges]
 
@@ -255,13 +262,15 @@ For simplicity, we assume a lazy approach for handling quantified formulas in th
 
 [Results]
 
-\section{Summary}
+\section{Conclusion}
+\label{sec:conclusion}
 
+\subsection{Summary}
 [for UF]
 
 [for no UF]
 
-\section{Future Work}
+\subsection{Future Work}
 
 [Engineering existing]
 
