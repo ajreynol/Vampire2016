@@ -184,7 +184,7 @@ We will examine such an implementation in this paper, in particular addressing t
 It is important to note that some SMT approaches to quantified formulas
 reason about quantified formulas \emph{eagerly} during the DPLL($T$) search~\cite{}.
 In terms of Figure~\ref{fig:smtq}, these approaches invoke $\funcqi$
-for sets $M$ that are incomplete and do not necessarily propositinally entail all formulas in $\Gamma$.
+when $M$ is incomplete and does not necessarily propositionally entail all formulas in $\Gamma$.
 The advantage of doing so is that lemmas returned by $\funcqi$ may help prune the search,
 while the disadvantage is that calling $\funcqi$ may be expensive and lead to non-termination.
 For simplicity, we assume a lazy approach for handling quantified formulas.
@@ -219,7 +219,7 @@ We will write $p[ \vec x ]$ to denote a term whose free variables are $\vec x$.
 %Formally, 
 %we say that a ground term $g$ matches $p$ modulo $E$ under substitution $\{ \vec x \mapsto \vec t \}$ if $E \models_T g = p \{ \vec x \mapsto \vec t \}$.
 In detail, 
-E-matching does the following for each $\forall \vec x\, \varphi$ occurring in $Q$:
+E-matching does the following for each $\forall \vec x\, \varphi[ \vec x ]$ occurring in $Q$:
 \begin{enumerate}
 \item Choose a set of patterns $p_1[ \vec x ], \ldots, p_m[ \vec x ]$.
 \item For each $j = 1, \ldots, m$,
@@ -245,8 +245,8 @@ Let $E$ be the set $\{ P(a), \neg P(b), R(c), \neg R(a), S(d) \}$ where $a,b,c,d
 Let $\psi$ be $\forall x\, P( x ) \vee R( x )$.
 Say we choose the pattern terms $P( x )$ and $R( x )$ for $\psi$.
 In Step 2, we compute pairs $( a, P( a ) )$ and $( b, P( b ) )$ for $P( x )$ and
-$( a, R( a ) )$ and $( c, R( c ) )$ for $R( x )$.
-Thus, E-matching returns $\{
+$( a, R( a ) )$ and $( c, R( c ) )$ for $R( x )$,
+and E-matching returns $\{
 \psi \Rightarrow P( a ) \vee R( a ), \psi \Rightarrow P( b ) \vee R( b ), \psi \Rightarrow P( c ) \vee R( c )
 \}$.
 \qed
@@ -260,7 +260,7 @@ let $\psi$ be $\forall xy\, P( f( x ), y ) \Rightarrow g( x ) = y$,
 and let $P( f( x ), y )$ be a pattern for it.
 We may consider the pair $( ( b, c ), P( a, c ) )$, which is such that $E \models_\euf P( a, c ) = P( f( b ), c )$ since $f( b ) = a \in E$,
 where $\models_\euf$ denotes entailment the theory of equality and uninterpreted functions.
-Thus, E-matching in this example returns $\{ \psi \Rightarrow ( P( f( b ), c ) \Rightarrow g( b ) = c \}$.
+E-matching in this example returns $\{ \psi \Rightarrow ( P( f( b ), c ) \Rightarrow g( b ) = c \}$.
 \qed
 \end{example}
 
@@ -363,7 +363,7 @@ considering instantiations in a bredth-first manner (by tracking a ``level" on t
 
 \subsection{Challenge: Incompleteness}
 
-If E-matching fails to return any instantiation lemmas,
+In addition to being non-terminating, if E-matching terminates without return any instantiation lemmas,
 this does not imply that $E \cup Q$ is satisfiable, as demonstrated in the following simple example.
 
 \begin{example}
@@ -379,8 +379,7 @@ or revert to more aggressive techniques for finding instantiations.
 Some variants of E-matching ensure completeness by a particular pattern selection specialized the quantified formulas in question~\cite{}.
 However, these approaches require an external pencil-and-paper proof by the user and not fully automated.
 
-\ 
-
+\begin{comment}
 In spite of its shortcomings, E-matching is highly successful technique 
 and is widely used in a number of current applications.
 In the following two sections, we will see two techniques that address the aforementioned challenges, in particular:
@@ -389,15 +388,24 @@ In the following two sections, we will see two techniques that address the afore
 \item To address cases where E-matching adds no instances or we believe the input to be satisfiable, 
 we will build candidate \emph{models}. 
 \end{itemize}
-
+\end{comment}
 
 \section{Conflict-Based Instantiation}
 \label{sec:cbqi}
 
+As mentioned, E-matching often generates too many instantiations, thereby degrading the performance of the SMT solver.
+To address this shortcoming, we may use a technique which we refer to as \emph{conflict-based quantifier instantiation}~\cite{},
+which has been implemented in a few current SMT solvers~\cite{}.
+The basic idea is to identify quantifier instantiations that are in conflict with the current context, 
+and consider these with higher priority than others.
 
+In detail, given a quantified formula $\forall \vec x\, \varphi[ \vec x ]$ in $Q$,
+we say that $\varphi[ \vec t ]$ is a \emph{conflicting instance} for $( E, Q )$ if $E, \varphi[ \vec t ] \models_T \bot$.
+If a single conflicting instance exists for $(E, Q )$, then it suffices to return only that instance
+and 
 
-[Introduction]
-
+\begin{example}
+\end{example}
 
 [Example]
 
