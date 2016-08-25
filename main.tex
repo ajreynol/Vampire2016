@@ -213,7 +213,6 @@ It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{}.
 Recently, variants of the approach have been implemented in a number of successful SMT solvers~\cite{}.
 The support for E-matching in these solvers is critical to the success of high-level reasoning tools for 
 software verfication~\cite{} and automated theorem proving~\cite{}.
-
 E-matching chooses instances for quantified formulas $\forall \vec x\, \varphi$
 based on \emph{pattern} terms whose free variables are $\vec x$.
 We will write $p[ \vec x ]$ to denote a term whose free variables are $\vec x$.
@@ -227,7 +226,7 @@ E-matching does the following for each $\forall \vec x\, \varphi$ occurring in $
 \begin{enumerate}
 \item Compute a set of pairs $(\vec t_{1},g_{1}), \ldots, (\vec t_{n}, g_{n})$ 
 where for each $i = 1, \ldots, n$, we have that $g_i$ is a ground term from $E$ such that $E \models_T g_{i} = p_j[ \vec t_{i} ]$.
-\item Return the lemmas $\forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{1}], \ldots, \forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{n}]$.
+\item Return the lemmas $\{ \forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{1}], \ldots, \forall x\, \varphi[\vec x] \Rightarrow \varphi[\vec t_{n}] \}$.
 \end{enumerate}
 \end{enumerate}
 
@@ -238,7 +237,7 @@ We then return instantiation lemmas corresponding to each of these pairs.
 In the context of Figure~\ref{fig:smtq}, these lemmas are included in the return value of $\funcqi$ (set $L$).
 Notice in this description, we write $E \models_T g_{i} = p_j[ \vec t_{i} ]$ to denote that $E$ entails
 $g_{i} = p_j[ \vec t_{i} ]$ modulo theory $T$.  In typical E-matching implementations, $T$ is limited to the theory of uninterpreted functions and equality.
-We demonstrate this technique in the following examples.
+%We demonstrate this technique in the following examples.
 
 \begin{example}
 \label{ex:em2}
@@ -247,10 +246,9 @@ Let $\psi$ be the quantified formula $\forall x\, P( x ) \vee R( x )$.
 Say we choose the pattern terms $P( x )$ and $R( x )$ for $\psi$.
 In Step 2, we compute the pairs $( a, P( a ) ), ( b, P( b ) )$ for $P( x )$ and
 $( a, R( a ) ), ( c, R( c ) )$ for $R( x )$.
-Overall, E-matching returns the lemmas:
-\[
+Thus, E-matching returns $\{
 \psi \Rightarrow P( a ) \vee R( a ), \psi \Rightarrow P( b ) \vee R( b ), \psi \Rightarrow P( c ) \vee R( c )
-\]
+\}$.
 \qed
 \end{example}
 
@@ -261,10 +259,7 @@ For example, let $E$ be the set $\{ P( a, c ), f( b ) = a \}$,
 let $\psi$ be the formula $\forall xy\, P( f( x ), y ) \Rightarrow g( x ) = y$,
 and let $P( f( x ), y )$ be a pattern for it.
 We may consider the pair $( ( b, c ), P( a, c ) )$, which is such that $E \models_\euf P( a, c ) = P( f( b ), c )$ since $f( b ) = a \in E$.
-Thus, E-matching in this example returns the lemma:
-\[
-\psi \Rightarrow ( P( f( b ), c ) \Rightarrow g( b ) = c
-\]
+Thus, E-matching in this example returns $\{ \psi \Rightarrow ( P( f( b ), c ) \Rightarrow g( b ) = c \}$.
 \qed
 \end{example}
 
@@ -281,22 +276,67 @@ that is, by adding an instance of $\psi$ to $E$ we learn that $\varphi[ g, \vec 
 %The effect of learning the instantiation $\varphi[ p[ \vec t ], \vec t ]$ 
 %suffices to learn $\varphi[ g, \vec t ]$ under the assumption of $E$,
 %that is, $E, \varphi[ p[ \vec t ], \vec t ] \models_T \varphi[ g, \vec t ]$.
-In other words, when using E-matching for selecting instances of quantified formulas from $Q$, 
-{\bf we learn information about ground terms in $E$}.
+In other words, when using E-matching for selecting instances of quantified formulas {\bf from $Q$, 
+we learn information about ground terms in $E$}.
 % i.e. the formula $\varphi[ g, \vec t ]$.
 For instance in Example~\ref{ex:em2}, the instantiation lemma returned by E-matching tells us
 that the ground term $P( a, c )$ from $E$ entails $g( b ) = c$, under the assumption that $E$ holds.
-We further comment on this intuition in Section~\ref{sec:cbqi}.
+%We further comment on this intuition in Section~\ref{sec:cbqi}.
 
 \subsection{Pattern Selection}
 There is no standard way to determine which patterns to select in E-matching.
 The performance of SMT solvers is highly dependent upon having a good pattern selection, as noted in recent work~\cite{}.
+In practice, patterns for quantified formulas can be can either be selected manually by the user~\cite{},
+or selected automatically by the SMT solver.
 
+For the latter, SMT solvers typically select patterns for $\forall \vec x\, \varphi$ that are subterms $\varphi$,
+and are applications of uninterpreted functions.
+For example, if $\varphi$ is $f( x, y ) = x + y$ where $f$ is uninterpreted, then $f( x, y )$ would be selected as a pattern
+but not $x + y$.
+Moreover, they tend to select multiple eligible patterns when multiple are available, 
+e.g. $P( x )$ and $R( x )$ may be selected for $P( x ) \vee R( x )$.
+Another key choice in pattern selection is whether to consider nested terms, e.g. when $\varphi$ is $P( f( x ) )$,
+we may either select $f( x )$ or $P( f( x ) )$, where the latter selection leads to strictly fewer instantiations.
+If no eligible term contains all the free variables in $\vec x$, then it selects a pattern consisting of multiple terms.
+These are often called \emph{multi-patterns}.
+For example, for $R( x, y ) \wedge R( y, z ) \Rightarrow R( x, z )$, then the set $\{ R( x, y ), R( y, z ) \}$ is a multi-pattern.
+E-matching would add an instance for this multi-pattern if it could find a substitution with domain $\{ x, y, z \}$
+that simulatenously matched both terms to ground terms in the current context.
+Multi-patterns tend to induce many instantiations, and hence they tend to be chosen with lower priority.
 
+It is yet to be explored how recent techniques for literal selection in automated theorem provers~\cite{}
+relate to pattern selection in SMT solvers.
 
 \subsection{Challenge: Too Many Instances}
 
-[Data]
+\begin{figure}[t]
+\centering
+{
+\begin{tabular}{|c|cc|cc|cc|}      
+\hline                                                                      
+\#Instances & \multicolumn{2}{c|}{{\bf cvc3}} & \multicolumn{2}{c|}{{\bf cvc4}} & \multicolumn{2}{c|}{{\bf z3}} \\
+\hline   
+1-10 & 1464 & 13.49\% & 1007 & 8.87\% & 1321 & 11.43\% \\
+10-100 & 1755 & 16.17\% & 1853 & 16.31\% & 2554 & 22.11\% \\
+100-1000 & 3816 & 35.16\% & 3680 & 32.40\% & 4553 & 39.41\% \\
+1000-10k & 1893 & 17.44\% & 2468 & 21.73\% & 1779 & 15.40\% \\
+10k-100k & 1162 & 10.71\% & 1414 & 12.45\% & 823 & 7.12\% \\
+100k-1M & 560 & 5.16\% & 607 & 5.34\% & 376 & 3.25\% \\
+1M-10M & 193 & 1.78\% & 330 & 2.91\% & 139 & 1.20\% \\
+$>$10M & 10 & 0.09\% & 0 & 0.00\% & 8 & 0.07\%  \\                           
+\hline                                                                
+\end{tabular}
+\\
+}
+\caption{Number of instantiations by implementations of E-matching in SMT solvers
+on benchmarks from the SMT-LIB, TPTP and Isabelle. Data taken from~\cite{}.}
+\label{fig:results-inst}
+\end{figure}
+
+One of the central challenges when using E-matching is dealing with the large number of instantiations it generates.
+Figure~\ref{fig:results-inst} gives statistics on the number of instantiations returned by three implementations of E-matching
+on benchmarks they solve from the SMT-LIB, TPTP, and Isabelle benchmarks.
+
 
 [Non-termination]
 \begin{example}
@@ -316,11 +356,20 @@ However, $Q$ clearly is $T$-unsatisfiable.
 \qed
 \end{example}
 
-
-[Pencil-and-paper]
+Thus, when E-matching saturates with no instances, some SMT solvers will terminate with ``unknown"
+or revert to more aggressive techniques for finding instantiations.
+Some variants of E-matching ensure completeness by a particular pattern selection specialized the quantified formulas in question~\cite{}.
+However, these approaches require an external pencil-and-paper proof by the user and not fully automated.
 
 \ 
 
+In spite of its shortcomings, E-matching is highly successful technique 
+and is widely used in a number of current applications.
+In the following two sections, we will see two techniques that address the aforementioned challenges, in particular:
+\begin{itemize}
+\item To address the large number of instances produced by E-matching, we will find \emph{conflicts} to prune the search space, and
+\item To address cases where E-matching adds no instances and we believe the input to be satisfiable, we will build \emph{models}.
+\end{itemize}
 
 
 \section{Conflict-Based Instantiation}
