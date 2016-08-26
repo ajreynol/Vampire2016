@@ -280,12 +280,12 @@ that is, by adding an instance of $\psi$ to $E$ we learn that $\varphi[ g, \vec 
 %The effect of learning the instantiation $\varphi[ p[ \vec t ], \vec t ]$ 
 %suffices to learn $\varphi[ g, \vec t ]$ under the assumption of $E$,
 %that is, $E, \varphi[ p[ \vec t ], \vec t ] \models_T \varphi[ g, \vec t ]$.
-In other words, when using E-matching for selecting instances of quantified formulas {\bf from $Q$, 
-we learn information about ground terms in $E$}.
+In other words, 
+the goal of E-matching is to {\bf from $Q$, learn information about ground terms in $E$}.
 % i.e. the formula $\varphi[ g, \vec t ]$.
 In Example~\ref{ex:em2}, the instantiation lemma returned by E-matching tells us
 that the ground term $P( a, c )$ from $E$ entails $g( b ) = c$, under the assumption that $E$ holds.
-%We further comment on this intuition in Section~\ref{sec:cbqi}.
+This intuition will be revisited in Section~\ref{sec:cbqi}.
 
 \subsection{Pattern Selection}
 There is no standard way to determine which patterns to select in E-matching.
@@ -456,8 +456,7 @@ In other words, after adding this instance to
 In this case, we say that $f( g( b ) ) = h( f( b ) )$ is a \emph{propagating instance} for $( E, \{ \psi \} )$.
 \qed
 \end{example}
-
-In summary, the goal of conflict-based instantiation is to {\bf from $Q$, 
+To summarize, the goal of conflict-based instantiation is to {\bf from $Q$, 
 learn conflicts and equalities between ground terms in $E$}.
 We run conflict-based instantiation prior to running E-matching.
 A revised strategy for quantifier instantiation is the following:
@@ -509,6 +508,17 @@ Details on benchmarks solved, and instances constructed by \cvc with and without
 \label{fig:results-inst-detail}
 \end{figure}
 
+\begin{figure}[t]
+\centering{%
+\includegraphics[scale=.22, angle=270]{scatter-cbqi.pdf} 
+}
+\caption{ Number of instantiations reported by
+{\bf cvc4+ci} vs {\bf cvc4} over all benchmarks.
+Data shown on a log-log scale.
+}
+\label{fig:cbqi-scatter}
+\end{figure}
+
 Figure~\ref{fig:results-inst-detail}
 gives a detailed summary of the impact of conflict-based instantiation in the SMT solver \cvc
 on the SMT-LIB, TPTP, and Isabelle benchmark libraries (further details are given in~\cite{}).
@@ -531,6 +541,11 @@ X\% of instantiation rounds, a percentage that is relatively consistent across a
 When conflicting instances are not found, propagating instances are found on an additional X\% of instantiation rounds.
 The number of instantiations added by {\bf cvc4+ci} are by a wide margin those considered during E-matching.
 
+Figure~\ref{fig:cbqi-scatter} gives a scatter plot of the number of instantiations per individual benchmark
+across all three sets, where the data is shown on a log scale.
+With the exception of a few outliers, {\bf cvc4+ci} consistently considers fewer instantiations,
+and in many cases only requires a handful of instantiations to solve benchmarks for which {\bf cvc4}
+requires thousands of instantiation lemmas.
 It is also interesting to note that several difficult benchmarks can be solved by {\bf cvc4}
 without resorting to E-matching at all.
 In particular, results from~\cite{} showed that XXX benchmarks could be solved {\bf cvc4+ci}
@@ -548,7 +563,7 @@ that takes into account the structure of the bodies of quantified formulas.
 As a simple example, for the formula $\forall x\, P( x ) \vee R( x )$, we would match
 $P( x )$ against ground terms from $E$ that are currently entailed to be equal to $\bot$, but not $\top$.
 
-Another challenge is finding conflicting instances in the presence of interpreted symbols.
+Another challenge is finding conflicts in the presence of interpreted symbols.
 \begin{example}
 Let $E$ be the set $\{ f( 1 ) = 5 \}$ and let $\psi$ be $\forall xy\, f( x + y ) > x + 2 \cdot y$.
 The instance $f( -3 + 4 ) > -3 + 2 \cdot 4$ is conflicting for $( E, \{ \psi \} )$,
@@ -556,12 +571,12 @@ noting that $E, f( -3 + 4 ) > -3 + 2 \cdot 4 \models_{\uflia} \bot$, where $\ufl
 theory of uninterpreted functions and linear integer arithmetic.
 \qed
 \end{example}
-In general, finding conflicting instances can be highly expensive, both because checking entailment modulo theories is expensive,
+In general, finding conflicting instances can be expensive, both because checking entailment modulo theories may be time consuming,
 and because matching modulo theories is often not obvious.
 For these reasons,
 the implementation of conflict-based instantiation in \cvc
 considers entailment only modulo equality and uninterpreted functions,
-and avoids exponential behavior at the cost of being (more) incomplete for finding conflicting instances. 
+and avoids exponential behavior at the cost of being more incomplete for finding conflicting instances. 
 
 \section{Model-Based Instantiation}
 \label{sec:mbqi}
