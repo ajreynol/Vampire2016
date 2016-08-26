@@ -66,28 +66,30 @@ can be handled well in practice by modern automated theorem provers and SMT solv
 
 
 A growing number of modern tools exist for reasoning about first-order quantified formulas.
-A number of automated theorem provers,
+A number of automated theorem prover,
 (such as Vampire~\cite{}, E~\cite{}, and SPASS~\cite{}), were originally developed to target 
 quantified formulas in single-sorted first-order logic.
 More recently, these solvers have been exten
 For the most part, theorem provers from this community are superposition-based,
 although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{}.
+A recent approach known as AVATAR~\cite{} leverages support in SAT and SMT solvers for quantifier-free formulas,
+in combination with a superposition-based theorem prover.
 
-Conversely, SMT solvers (such as CVC~\cite{}, Yices~\cite{}, and Z3~\cite{}), 
+In contrast to most of these automated theorem provers, 
+SMT solvers (such as CVC~\cite{}, Yices~\cite{}, and Z3~\cite{}), 
 were originally developed to target quantifier-free formulas in background theories,
 but have more recently been extended with support for universally quantified formulas.
 The approaches here are mostly instantiation-based based~\cite{},
 although some approaches are based on superposition~\cite{}.
-SAT and SMT solvers for quantifier-free formulas have also been leveraged in
-superposition-based theorem proving in an approach known as AVATAR~\cite{}.
 
 This paper will focus primarily on recent techniques for quantifier instantiation in SMT solvers.
 In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers with support for quantified formulas.
-%Sections~\ref{sec:ematching}-~\ref{sec:mbqi} will overview modern general-purpose techniques 
-%for quantifier instantiation in SMT.
-Section~\ref{sec:ematching} will discuss general-purpose and incomplete methods for handling quantified formulas in SMT.
-Section~\ref{sec:cbqi} will examine how finding \emph{conflicts} can improve the ability of the techniques for answering ``unsat",
-and Section~\ref{sec:mbqi} will examine how constructing \emph{candidate models} can enable the solver to answer ``sat".
+We then focus on three general-purpose instantiation strategies for handling quantified formulas in SMT:
+\begin{itemize}
+\item Section~\ref{sec:ematching} will discuss widely-used \emph{heuristic} methods based on pattern-matching,
+\item Section~\ref{sec:cbqi} will discuss how finding \emph{conflicts} can improve the ability of solvers to answer ``unsat",
+\item Section~\ref{sec:mbqi} will examine how constructing candidate \emph{models} can enable the solvers to answer ``sat".
+\end{itemize} 
 Section~\ref{sec:cegqi} introduces further techniques for quantifier instantiation in SMT that 
 are specialized to theories.
 Finally, we conclude in Section~\ref{sec:conclusion} with a summary and mention possible future work.
@@ -329,37 +331,42 @@ $>$10M & 10 & 0.1\% & 0 & 0.0\% & 8 & 0.1\%  \\
 \\
 }
 \caption{Number of instantiations by implementations of E-matching in SMT solvers
-on benchmarks they solve from the SMT-LIB, TPTP and Isabelle, with a 300 second timeout. Data taken from~\cite{}.}
+on benchmarks they solve with a 300 second timeout from SMT-LIB, TPTP and Isabelle. Data taken from~\cite{}.}
 \label{fig:results-inst}
 \end{figure}
 
 One of the central challenges when using E-matching is dealing with the large number of instantiations it generates.
-Figure~\ref{fig:results-inst} gives statistics on the number of instantiations returned by three implementations of E-matching 
+Figure~\ref{fig:results-inst} gives statistics on the number of instantiations returned by three implementations of E-matching in recent SMT solvers~\cite{}
 on benchmarks they solve from the the SMT-LIB library~\cite{}, the TPTP library~\cite{}, and Isabelle~\cite{}.
 For example, cvc4 solves 1853 benchmarks for which it added between 10 and 100 instantiation lemmas.
 We can see from this data that the median number of instantiations tends to be between 100 and 1000,
 and a majority of benchmarks taking between 10 and 10 thousand instantiations.
-When isolated to benchmarks for which at least one solver times out, 
-the median
 A number of benchmarks are solved after upwards of one million instantiations,
-and z3 solves one benchmark in the TPTP library after adding more than 19.5 million instantiations.
+and z3 solves one benchmark in the TPTP library after adding more than 19.5 million instantiation lemmas.
 
-Instantiation lemmas introduce new ground terms, which are in turn used to generate new substitutions and so on.
-It is common for E-matching to generate thousands of instantiations after executing only a handful of iterations.
-These instantiations can often overload the quantifier-free component of the SMT solver (Lines 2-6 of Figure~\ref{fig:smtq}),
+The number of instantiation lemmas tends to increase exponentially over the course of a run of an SMT solver.
+The reason is that instantiation lemmas introduce new ground terms, which are in turn used to generate new substitutions that lead to
+new instantiation lemmas and so on.
+In practice, it is common for E-matching to generate thousands of instantiations after executing only a handful of iterations,
+which in turn overload the quantifier-free component of the SMT solver (Lines 2-6 of Figure~\ref{fig:smtq}),
 thereby degrading the performance of the system significantly.
 
-It is also important to note that E-matching may diverge on simple examples
+It is important to note that E-matching may diverge on simple examples
 as demonstrated in the following example.
 
 \begin{example}
-
+Let $E$ be the set $\{ f( a ) = a \}$ and let $\psi$ be $\forall x\, f( f( x ) ) = f( x )$.
+Say we select $f( x )$ as a pattern for $\psi$.
+Matching this pattern with $f( a )$ gives us the lemma $\psi \Rightarrow f( f( a ) ) = f( a )$.
+Adding the right hand side to $E$, we have that $f( x )$ matches $f( f( a ) )$, giving us the lemma $\psi \Rightarrow f( f( f( a ) ) ) = f( f( a ) )$.
+In absence of further heuristics, lemmas of this form will be added indefinitely.
+\qed
 \end{example}
 
 The aforementioned case is often referred to as a \emph{matching loop}.
 Matching loops may be avoided by
 restricting pattern selection, or by
-considering instantiations in a bredth-first manner (by tracking a ``level" on the terms introduced by instantiations)~\cite{}.
+considering instantiations in a bredth-first manner by tracking a ``level" on the terms introduced by instantiations~\cite{}.
 
 \subsection{Challenge: Incompleteness}
 
@@ -393,16 +400,17 @@ we will build candidate \emph{models}.
 \section{Conflict-Based Instantiation}
 \label{sec:cbqi}
 
-As mentioned, E-matching often generates too many instantiations, thereby degrading the performance of the SMT solver.
-To address this shortcoming, we may use a technique which we refer to as \emph{conflict-based quantifier instantiation}~\cite{},
-which has been implemented in a few current SMT solvers~\cite{}.
-The basic idea is to identify quantifier instantiations that are in conflict with the current context, 
-and consider these with higher priority than others.
+As mentioned, E-matching often generates an overabundance of instantiation lemmas, many of which are irrelevant to the satisfiability of our input,
+which in turn degrade the performance of the SMT solver.
+To address this shortcoming, we may use a technique which we will refer to as \emph{conflict-based quantifier instantiation}.
+This technique was introduced in the context of a modern SMT solving in~\cite{}, and has been implemented in a few recent systems~\cite{}.
+%The basic idea is to identify instantiation lemmas that are in \emph{conflict} with the current context, 
+%and consider such lemmas with higher priority than the others.
 
-In detail, given a quantified formula $\forall \vec x\, \varphi[ \vec x ]$ in $Q$,
+Given a quantified formula $\forall \vec x\, \varphi[ \vec x ]$ in $Q$,
 we say that $\varphi[ \vec t ]$ is a \emph{conflicting instance} for $( E, Q )$ if $E, \varphi[ \vec t ] \models_T \bot$.
-If a single conflicting instance exists for $(E, Q )$, then we already know that $E \cup Q$ is unsatisfiable,
-and may return \emph{only} that instance.
+A single conflicting instance exists for $(E, Q )$ suffices to show that $E \cup Q$ is unsatisfiable,
+and hence we may return \emph{only} that instance.
 
 \begin{example}
 Let $E$ be the set $\{ P(a), \neg P(d), \neg P( c ), \neg R(b), \neg R(a), \neg R(d) \}$ where $a,b,c,d$ are free constants and $P,R$ are unary predicates.
@@ -418,28 +426,92 @@ E, P( c ) \vee R( c ) &\models& R( c ) \\
 E, P( d ) \vee R( d ) &\models& \bot \\
 \end{array}
 \]
-In other words, since $P( b ) \in E$, we learn no new information from the first instance,
+In other words, since $P( a ) \in E$, we learn no new information from the first instance,
 whereas since $\neg P( d ), \neg R( d ) \in E$, we learn $\bot$ from the fourth instance.
-In this example, $P( d ) \vee R( d )$ is a conflict instance for $( E, \{ \psi \} )$.
-Conflict-based instantiation would return this lemma only and discard the others.
+In this example, $P( d ) \vee R( d )$ is a conflicting instance for $( E, \{ \psi \} )$.
+Conflict-based instantiation would return \emph{only} this lemma and discard the others.
+\qed
+\end{example}
+This technique can be extended to find instantiations that are conflicting while taking into account equality and uninterpreted functions.
+\begin{example}
+Let $E$ be $\{ a \neq c, f( b ) = b, g( b ) = a, f( a ) = a, h( f( a ) ) = d, h( b ) =c \}$ and let $\psi$ be
+$\forall x\, f( g( x ) ) = h( f( x ) )$. 
+The instance $f( g( b ) ) = h( f( b ) )$ is a conflicting instance for $( E, \{ \psi \} )$,
+by noting that it is an instance of $\psi$,
+$E \models_\euf f( g( b ) ) = a \wedge h( f( b ) ) = c \wedge a \neq c$
+and hence $E, f( g( b ) ) = h( f( b ) ) \models_\euf \bot$.
+\qed
+\end{example}
+We also distinguish other instances that are relevant to the satisfiability of $E \cup Q$,
+by noting which ones entail equalities between ground terms in $E$.
+This behavior is analagous to that of quantifier-free theory solvers, which often employ
+theory propagation techniques for pruning the search space.
+\begin{example}
+Consider the sets $E$ and $\psi$ from the previous example, but where $a \neq c$ is removed from $E$.
+In this case, $f( g( b ) ) = h( f( b ) )$ is no longer a conflicting instance for $( E, \{ \psi \} )$.
+However, notice that we still have that $E, f( g( b ) ) = h( f( b ) ) \models_\euf a = c$.
+In other words, after adding this instance to 
+In this case, we say that $f( g( b ) ) = h( f( b ) )$ is a \emph{propagating instance} for $( E, \{ \psi \} )$.
 \qed
 \end{example}
 
-This technique can be extended to find instantiations that are conflicting taking into account equality and uninterpreted functions.
+In summary, the goal of conflict-based instantiation is to {\bf from $Q$, 
+learn conflicts and equalities between ground terms in $E$}.
 
-\begin{example}
-\end{example}
-[Extension to EUF]
-
-[Intuition]
 
 \subsection{Impact}
 
+\begin{figure}[t]
+\centering
+{%\scriptsize
+\begin{tabular}{|r|r|c|cc|cc|cc|cc|}
+\hline
+  &  & & & & \multicolumn{2}{c|}{E-matching}  & \multicolumn{2}{c|}{Conflicting}  & \multicolumn{2}{c|}{Propagating}
+\\
+&   & \# Solved & IR & \# Inst & \%IR & \# Inst & \%IR & \# Inst & \%IR & \# Inst
+\\
+\hline 
+ TPTP &  {\bf cvc4} & 6100 & 71.6K & 879.0M & 100.0 & 879.0M &  &  &  & 
+\\
+ & {\bf cvc4+ci} & 6616 & 209.0K & 150.9M & 20.3 & 150.4M & 76.4 & 159.7K & 3.3 & 415.8K
+\\
+\hline
+ Isabelle & {\bf cvc4} & 3858 & 7.0K & 119.0M & 100.0 & 119.0M &  &  &  & 
+\\
+ & {\bf cvc4+ci} & 4082 & 21.8K & 28.3M & 22.4 & 28.2M & 64.0 & 13.9K & 13.6 & 130.9K
+ \\
+\hline
+ SMT-LIB & {\bf cvc4} & 3680 & 14.0K & 60.7M & 100.0 & 60.7M &  &  &  & 
+\\
+ & {\bf cvc4+ci} & 3747 & 58.0K & 32.4M & 20.0 & 32.3M & 71.6 & 41.5K & 8.4 & 51.5K
+\\
+\hline
+\end{tabular}
+\\
+}
+\caption{
+Details on benchmarks solved, and instances constructed by \cvc with and without conflict-based instantiation.
+}
+\label{fig:results-inst-detail}
+\end{figure}
 
+Figure~\ref{fig:results-inst-detail}
+gives a detailed summary of the impact of conflict-based instantiation in the SMT solver \cvc
+on the SMT-LIB, TPTP, and Isabelle benchmark libraries\footnote{Further details are given in~\cite{}.}
+Firstly, column 3 shows that \cvc with conflict-based instantiation, as indicated by {\bf cvc4+ci},
+solves significantly more benchmarks with respect to \cvc without.
+In addition, it uses significantly fewer instantiations overall to solve these benchmarks.
+Column 4 gives the aggregate number of instantiation rounds (IR) taken by these configurations
+(in the context of Figure~\ref{fig:smtq}, this is the number of calls to $\funcqi$),
+and column 5 gives the number of instantiation lemmas returned in these rounds.
+Columns 6-11 give the percentage of instantiation rounds (IR) taken by the solver 
 
 \subsection{Challenge: Finding Conflicting Instances}
 A key challenge behind conflict-based instantiation
 is identifying which instantiations are conflicting in an efficient manner.
+A naive approach would be to construct the set of instantiations E-matching.
+
+However, this 
 
 
 \section{Model-Based Instantiation}
