@@ -468,7 +468,10 @@ return $\{ \forall \vec x\, \varphi[ \vec x ] \Rightarrow \varphi[ \vec t ] \}$ 
 return $\{ \forall \vec x_1\, \varphi_1[ \vec x_1 ] \Rightarrow \varphi_1[ \vec t_1 ], \ldots, \forall \vec x_n\, \varphi_n[ \vec x_n ] \Rightarrow \varphi_n[ \vec t_n ] \}$ only.
 \item Otherwise, return the instantiation lemmas returned by E-matching.
 \end{enumerate}
-It is important to
+It is important to note that the level of effort put towards 
+finding conflicting and propagating instances is flexible.
+An implementation that spends more time searching for conflicting instances will potentially add fewer instantiation lemmas,
+but will spend more time per lemma added.
 
 \subsection{Impact}
 
@@ -517,20 +520,48 @@ Column 4 gives the aggregate number of instantiation rounds (IR) taken by these 
 Column 5 gives the number of instantiation lemmas returned in these rounds.
 We can see that the overall number of instantiations added by {\bf cvc4+ci} is approximately
 a factor of five times fewer than {\bf cvc4}.
-
+Overall, {\bf cvc4+ci} solves XXX more benchmarks than {\bf cvc4}
+while adding a total of XXX fewer instantiations for doing so.
 
 Columns 6-11 give the percentage of instantiation rounds (IR) taken by the solver 
 for which it returns instantiations based on E-matching, a conflicting instance,
 or propagating instance(s).
+It is interesting to note that conflicting instances are found by \cvc on
+X\% of instantiation rounds, a percentage that is relatively consistent across all three benchmark sets.
+When conflicting instances are not found, propagating instances are found on an additional X\% of instantiation rounds.
+The number of instantiations added by {\bf cvc4+ci} are by a wide margin those considered during E-matching.
 
+It is also interesting to note that several difficult benchmarks can be solved by {\bf cvc4}
+without resorting to E-matching at all.
+In particular, results from~\cite{} showed that XXX benchmarks could be solved {\bf cvc4+ci}
+but not by {\bf z3} and {\bf cvc3} where it did not resort to E-matching at all.
 
 \subsection{Challenge: Finding Conflicting Instances}
 A key challenge behind conflict-based instantiation
 is identifying which instantiations are conflicting in an efficient manner.
-A naive approach would be to construct the set of instantiations E-matching.
-However, this is clear
+A naive approach would be to construct the set of instantiations E-matching, and then check if each one of these instances
+was conflicting.
+This is highly inefficient, and in fact partially negates our original motivation.
 %and in fact partially negates our original motivation for avoiding this construction.
+Instead, implementation of conflict-based instantiation in \cvc uses a stronger version of matching
+that takes into account the structure of the bodies of quantified formulas.
+As a simple example, for the formula $\forall x\, P( x ) \vee R( x )$, we would match
+$P( x )$ against ground terms from $E$ that are currently entailed to be equal to $\bot$, but not $\top$.
 
+Another challenge is finding conflicting instances in the presence of interpreted symbols.
+\begin{example}
+Let $E$ be the set $\{ f( 1 ) = 5 \}$ and let $\psi$ be $\forall xy\, f( x + y ) > x + 2 \cdot y$.
+The instance $f( -3 + 4 ) > -3 + 2 \cdot 4$ is conflicting for $( E, \{ \psi \} )$,
+noting that $E, f( -3 + 4 ) > -3 + 2 \cdot 4 \models_{\uflia} \bot$, where $\uflia$ is the combined
+theory of uninterpreted functions and linear integer arithmetic.
+\qed
+\end{example}
+In general, finding conflicting instances can be highly expensive, both because checking entailment modulo theories is expensive,
+and because matching modulo theories is often not obvious.
+For these reasons,
+the implementation of conflict-based instantiation in \cvc
+considers entailment only modulo equality and uninterpreted functions,
+and avoids exponential behavior at the cost of being (more) incomplete for finding conflicting instances. 
 
 \section{Model-Based Instantiation}
 \label{sec:mbqi}
@@ -541,28 +572,60 @@ that is, when it terminates with no instantiation lemmas, this does not imply th
 which was introduced in the context of modern SMT solving in~\cite{},
 and has since been implemented in several solvers~\cite{}.
 
+With model-based quantifier instantiation, the basic idea is
+to construct a \emph{candidate model} $\I$ that satisfies $E$, 
+and then check whether $\I$ satisfies $Q$ as well.
+In other words, $\I$ contains a complete interpretation for all free constants and uninterpreted functions occurring in $E$ and $Q$.
+Constructing an interpretation that satisfies the quantifier-free constraints in $E$
+is typically possible 
+To check whether an interpretation $\I$ satisfies a quantified formula $\forall \vec x\, \varphi[ \vec x ]$ where $\varphi$ is quantifier-free,
+it suffices to show that the quantifier-free formula $\neg \varphi^\I[ \vec k ]$ is \emph{unsatisfiable},
+where $\varphi^\I$ is the result of replacing each uninterpreted function in $\varphi$
+by its interpretation in $\I$.
 
 \begin{example}
+
 \end{example}
 
 \subsection{Impact}
-
-
 Model-based instantiation often enables SMT solvers to
 establish the satisfiability of inputs where exhaustive instantiation is infeasible.
 
 
 \subsection{Completeness}
-[Fixed-finite, finite, finite instantiation]
+We have now seen that SMT solvers may answer ``unsat" using quantifier instantatiation
+when they discover a finite set of instances that are collectively unsatisfiable at the quantifier free,
+and SMT solvers may answer ``sat" if they discover a candidate model that satisfies all quantified formulas.
+Thus, it is 
 
-Model-based instantiation techniques are clearly complete
+Approaches that incorporate model-based instantiation are clearly complete
 when the domains of quantified formulas have a fixed finite interpretation
-such in quantified Boolean formulas~\cite{},
-or quantified bit-vectors.
-
+such in quantified Boolean formulas (QBF)~\cite{},
+or quantified bit-vectors~\cite{}.
+For quantified formulas over unintepreted sorts,
+finite model finding approaches~\cite{} are generally finite-model complete,
+that is guarenteed to terminate with ``sat" when there exists a model that interprets
+all uninterpreted sorts as finite sets, and complete for fragments such as Bernays-Schonfinkel
+that exhibit a small model property.
+More generally, approaches for model-based quantifier instantiation are complete in cases
+where it can be argued that only a finite number of instantiation lemmas will be returned before 
+a model is found.
+For example, the work of~\cite{} examines a class of formulas known as the essentially uninterpreted fragment,
+where it can be argued that if a computation of the relevant domain of quantified formulas is finite,
+then an instantiation strategy can be made that is complete.
+This fragment includes some quantified formulas over infinite domains such as the integers.
+%Other fragments that extend Bernays-Schonfinkel have been studied in recent work~\cite{}.
 
 \subsection{Challenge: Constructing Models}
+The core challenge to model-based quantifier instantiation is how to construct candidate models $\I$.
+As mentioned, common approaches to model-based quantifier instantiation
 
+\begin{example}
+Let $\psi$ be $\forall xy\, f( x, y ) \geq x \wedge f( x, y ) \geq y$.
+This 
+
+\qed
+\end{example}
 [Example]
 
 \section{Counterexample-Guided Instantiation}
@@ -589,20 +652,22 @@ or quantified bit-vectors.
 
 \begin{figure}[t]
 \begin{framed}
-$\funcsmtsolve( \Gamma )$:
 $\funcqi( E, Q )$:
 \begin{enumerate}
 \item[\ ] If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\psi$ of the form $\forall \vec x\, \varphi[ \vec x ] \in Q$,
 \begin{enumerate}
 \item[\ ] Return $( \text{``unknown"}, \{ \psi \Rightarrow \varphi[ \vec t ] \} )$.
 \end{enumerate}
-\item[\ ] 
-\item[\ ] Let $\I$ be a model of $E$. 
+\item[\ ] Otherwise, do one of the following:
+\begin{enumerate}
+\item Return $( \text{``unknown"}, L )$, where $L$ is non-empty and selected by e.g. E-matching.
+\item Let $\I$ be a model of $E$. 
 \item[\ ] If $\I \models \neg \varphi[ \vec t ]$ for some $\vec t$, $\psi$ of the form $\forall \vec x\, \varphi[ \vec x ] \in Q$,
 \begin{enumerate}
 \item[\ ] Return $( \text{``unknown"}, \{ \psi \Rightarrow \varphi[ \vec t ] \}$ ).
 \end{enumerate}
-\item[\ ] Otherwise, return $( \text{``sat"}, emptyset )$.
+\item[\ ] Otherwise, return $( \text{``sat"}, \emptyset )$.
+\end{enumerate}
 \end{enumerate}
 \end{framed}
 \vspace{-2ex}
