@@ -596,9 +596,9 @@ establish the satisfiability of inputs where exhaustive instantiation is infeasi
 We have now seen that SMT solvers may answer ``unsat" using quantifier instantatiation
 when they discover a finite set of instances that are collectively unsatisfiable at the quantifier free,
 and SMT solvers may answer ``sat" if they discover a candidate model that satisfies all quantified formulas.
-Thus, it is 
+It is worth noting when these solvers are guaranteed eventually to terminate.
 
-Approaches that incorporate model-based instantiation are clearly complete
+Approaches that incorporate model-based instantiation are clearly terminating
 when the domains of quantified formulas have a fixed finite interpretation
 such in quantified Boolean formulas (QBF)~\cite{},
 or quantified bit-vectors~\cite{}.
@@ -607,7 +607,7 @@ finite model finding approaches~\cite{} are generally finite-model complete,
 that is guarenteed to terminate with ``sat" when there exists a model that interprets
 all uninterpreted sorts as finite sets, and complete for fragments such as Bernays-Schonfinkel
 that exhibit a small model property.
-More generally, approaches for model-based quantifier instantiation are complete in cases
+More generally, approaches for model-based quantifier instantiation are terminating in cases
 where it can be argued that only a finite number of instantiation lemmas will be returned before 
 a model is found.
 For example, the work of~\cite{} examines a class of formulas known as the essentially uninterpreted fragment,
