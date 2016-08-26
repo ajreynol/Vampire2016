@@ -17,6 +17,7 @@
 \usepackage{comment}
 \usepackage{listing}
 \usepackage{colortbl}
+\usepackage{subfigure}
 
 %\usepackage{times}
 \usepackage{framed}
@@ -607,6 +608,24 @@ Model-based instantiation often enables SMT solvers to
 establish the satisfiability of inputs where exhaustive instantiation is infeasible.
 
 
+\begin{figure}[t]
+\centering
+\subfigure[Number of instantiations with MBQI.]{%
+\label{fig:results-tscatter}
+\includegraphics[scale=.22, angle=270]{model-size-nmbqi.pdf} 
+}
+\quad
+\subfigure[Number of instantiations without MBQI.]{%
+\label{fig:results-iscatter}
+\includegraphics[scale=.22, angle=270]{model-size-mbqi.pdf} 
+}%
+\caption{
+Number of instantiations added by \cvc with and without model-based quantifier instantiation
+on TPTP benchmarks with a 300 second timeout.
+}
+\label{fig:inst-mbqi}
+\end{figure}
+
 \subsection{Completeness}
 We have now seen that SMT solvers may answer ``unsat" using quantifier instantatiation
 when they discover a finite set of instances that are collectively unsatisfiable at the quantifier free,
@@ -634,14 +653,17 @@ This fragment includes some quantified formulas over infinite domains such as th
 \subsection{Challenge: Constructing Models}
 The core challenge to model-based quantifier instantiation is how to construct candidate models $\I$.
 As mentioned, common approaches to model-based quantifier instantiation
+construct almost constant interpretations for all uninterpreted functions.
+This limits their strength both in terms of performance in practice and completeness.
 
 \begin{example}
-Let $\psi$ be $\forall xy\, f( x, y ) \geq x \wedge f( x, y ) \geq y$.
-This 
-
+Let $\psi$ be $\forall xy\, f( x, y ) \geq x \wedge f( x, y ) \geq y$, where $x$ and $y$ are integers.
+This formula has a model where for instance $f$ is interpreted as $\lambda xy\, \ite( x \geq y, x, y )$,
+but does not have a model where $f$ is almost constant.
 \qed
 \end{example}
-[Example]
+
+
 
 \section{Counterexample-Guided Instantiation}
 \label{sec:cegqi}
