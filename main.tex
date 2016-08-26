@@ -215,15 +215,15 @@ We examine various strategies for selecting instantiation lemmas in Sections~\re
 The most widely used technique for quantifier instantiation in SMT a heuristic technique known as \emph{E-matching}.
 It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{}.
 Recently, variants of the approach have been implemented in a number of successful SMT solvers~\cite{}.
-The support for E-matching in these solvers is critical to the success of high-level reasoning tools for 
+The support for E-matching in these solvers is critical to the success of high-level tools for 
 software verfication~\cite{} and automated theorem proving~\cite{}.
 E-matching chooses instances for quantified formulas $\forall \vec x\, \varphi$
-based on \emph{pattern} terms whose free variables are $\vec x$.
+based on \emph{pattern terms} whose free variables are $\vec x$.
 We will write $p[ \vec x ]$ to denote a term whose free variables are $\vec x$.
 %Formally, 
 %we say that a ground term $g$ matches $p$ modulo $E$ under substitution $\{ \vec x \mapsto \vec t \}$ if $E \models_T g = p \{ \vec x \mapsto \vec t \}$.
 In detail, 
-E-matching does the following for each $\forall \vec x\, \varphi[ \vec x ]$ occurring in $Q$:
+E-matching does the following for each $\forall \vec x\, \varphi[ \vec x ]$ in $Q$:
 \begin{enumerate}
 \item Choose a set of patterns $p_1[ \vec x ], \ldots, p_m[ \vec x ]$.
 \item For each $j = 1, \ldots, m$,
@@ -598,10 +598,34 @@ To check whether an interpretation $\I$ satisfies a quantified formula $\forall 
 it suffices to show that the quantifier-free formula $\neg \varphi^\I[ \vec k ]$ is \emph{unsatisfiable},
 where $\varphi^\I$ is the result of replacing each uninterpreted function in $\varphi$
 by its interpretation in $\I$.
+If $\neg \varphi^\I[ \vec k ]$ is \emph{satisfiable}, we add an instantiation based on the interpretation of $k$ in a model
+for this formula.
 
 \begin{example}
-
+Let $E$ be $\{ \neg P( a ), P( b ), \neg R( b ), \neg R( c ) \}$ and let $\psi$ be $\forall x\, P( x ) \vee R( x )$.
+We may construct an interpretation $\I$ that satisfies $E$ which interprets:
+\[
+\begin{array}{rcccccccccc}
+P^\I & = & \lambda x. & \ite( & x=a, & \bot, & \ite( & x=b, & \top, & \top  & )) \\
+R^\I & = & \lambda x. & \ite( & x=b, & \bot, & \ite( & x=c, & \bot, & \bot  & )) \\
+\end{array}
+\]
+Notice that $P^\I$ was constructed as an if-then-else that has entries corresponding to $P( a ) \Leftrightarrow \bot$
+and $P( b ) \Leftrightarrow \top$. Its \emph{default} value (the second occurrence of $\top$ in $P^\I$) was chosen arbitrarily.
+Similarly, we fix the existing entries and chose a default value of $\bot$ for $R$.
+To check whether $\I$ satisfies $\psi$, we check the satisfiability of:
+\[
+\neg ( \forall x\, P^\I( x ) \vee R^\I( x ) ) \transform \neg ( P^\I( k ) \vee R^\I( k ) ) \transform \neg ( ite( k=a, \bot, \top) \vee \bot ) \transform ( k = a )
+\]
+where $k$ is fresh constant.
+In other words, after simplification, we find that $\psi$ is not satisfied by $\I$ for all models of $k$ such that $k = a$.
+Model-based quantifier instantiation would subsequently return the instantiation lemma $\psi \Rightarrow P( a ) \vee R( a )$.
+\qed
 \end{example}
+Intuitively,
+model-based quantifier instantiation adds lemmas that refine candidate models
+until they are also a model of $Q$, or otherwise the SMT solver finds a conflict.
+
 
 \subsection{Impact}
 Model-based instantiation often enables SMT solvers to
@@ -691,16 +715,24 @@ but does not have a model where $f$ is almost constant.
 
 We have seen three classes of general-purpose techniques 
 for instantiation for quantified formulas in SMT.
-The common thread thus far has been that {\bf determining the satisfiability of universally quantified formulas in presence
-of uninterpreted functions and theory symbols is challenging}, and in fact is undecidable in general.
+The common thread thus far has been that determining the satisfiability of universally quantified formulas in presence
+of uninterpreted functions and theory symbols is challenging, and in fact is undecidable in general.
 However, when no uninterpreted function symbols are present and our background theory admits quantifier elimination, 
-e.g. linear real and integer arithmetic,
-then satisfiability can be established by a quantifier elimination procedure~\cite{}.
-
+e.g. linear real and integer arithmetic, then satisfiability 
+can be established by a quantifier elimination procedure~\cite{}.
 Recent work has adapted quantifier elimination techniques in the context of SMT solving~\cite{},
-and has been implemented in SMT solvers such as Z3~\cite{} and \cvc~\cite{},
+and has been implemented in SMT solvers such as Z3~\cite{}, \cvc~\cite{},
 as well as tools that use SMT solvers as a backend~\cite{}.
-Abstractly, these approaches can 
+
+Let $\exists \vec x\, \varphi[ \vec x, \vec k ]$ be a quantified formula in a background theory $T$.
+Assuming $T$ admits quantifier elimination, we know that this formula is equivalent to some finite disjunction
+$\varphi[ \vec t_1, \vec k ] \vee \ldots \vee \varphi[ \vec t_n, \vec k ]$ where $\vec{t_1}, \ldots, \vec{t_n}$ are tuples of terms, possibly containing free constants from $\vec k$.
+We may alternatively consider a lazy quantifier \emph{instantiation} procedure for establishing the satisfiability 
+$\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$ that considers instantiations of the form 
+$\neg \varphi[ \vec t_i, \vec k ]$ where $\vec t_i$ is one of $t_1, \ldots, t_n$.
+Assuming only instantiations of this form are considered by the procedure, it is complete.
+
+
 
 [Quantifier Elimination]
 
@@ -714,10 +746,6 @@ Abstractly, these approaches can
 \label{sec:conclusion}
 
 \subsection{Summary}
-[for UF]
-
-[for no UF]
-
 
 \begin{figure}[t]
 \begin{framed}
@@ -725,26 +753,17 @@ $\funcqi( E, Q )$: \\
 \begin{enumerate}
 \item[\ ] Do one of the following:
 \begin{itemize}
-\item[{\bf (Conflicts)}]
-\begin{itemize}
-\item[\ ] If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\forall \vec x\, \varphi[ \vec x ] \in Q$,
+\item If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\forall \vec x\, \varphi[ \vec x ] \in Q$, \hfill ({\bf Conflicts})
 \begin{enumerate}
-\item[\ ] Return $( \text{``unknown"}, \{ \forall \vec x\, \varphi[ \vec x ]  \Rightarrow \varphi[ \vec t ] \} )$.
+\item[\ ] return $( \text{``unknown"}, \{ \forall \vec x\, \varphi[ \vec x ]  \Rightarrow \varphi[ \vec t ] \} )$.
 \end{enumerate}
-\end{itemize}
-\item[{\bf(Heuristics)}]
-\begin{itemize}
-\item[\ ] Return $( \text{``unknown"}, L )$ based on e.g. E-matching.
-\end{itemize}
-\item[{\bf(Models)}]  
-\begin{itemize}
-\item[\ ] Let $\I$ be a model of $E$. 
+\item Return $( \text{``unknown"}, L )$ based on e.g. E-matching. \hfill {\bf(Heuristics)}
+\item Let $\I$ be a model of $E$. \hfill {\bf(Models)}
 \item[\ ] If $\I \models \neg \varphi[ \vec t ]$ for some $\vec t$, $\forall \vec x\, \varphi[ \vec x ] \in Q$,
 \begin{enumerate}
-\item[\ ] Return $( \text{``unknown"}, \{ \forall \vec x\, \varphi[ \vec x ]  \Rightarrow \varphi[ \vec t ] \}$ ).
+\item[\ ] return $( \text{``unknown"}, \{ \forall \vec x\, \varphi[ \vec x ]  \Rightarrow \varphi[ \vec t ] \}$ ).
 \end{enumerate}
 \item[\ ] Otherwise, return $( \text{``sat"}, \emptyset )$.
-\end{itemize}
 \end{itemize}
 \end{enumerate}
 \end{framed}
@@ -756,21 +775,24 @@ $\funcqi( E, Q )$: \\
 
 \subsection{Future Work}
 
-There is still a lot of room to improve upon current implementations of quantifier instantiation in SMT solvers,
-both in terms of engineering and in theory.
-For the former, it has yet to be explored how conflict-based instantiation can be implemented eagerly,
+There is room to improve upon current implementations of quantifier instantiation in SMT solvers,
+both in terms of engineering and theory.
+There are many design decisions behind all strategies mentioned in this paper, 
+many of which are not mentioned here and have yet to be explored.
+For instance, it has yet to be explored how conflict-based instantiation can be implemented eagerly,
 and if it can be efficiently applied in the presence of background theories.
+There is also potential for incorporating more advanced techniques for model construction in model-based quantifier instantiation.
 
-For the latter, there are a number of opportunities to extend SMT solvers with efficient dedicated support for
-new fragments of interest.
+Additionally, there are a number of opportunities to extend SMT solvers with efficient dedicated support for
+new fragments of first order logic of interest.
 For example, we have seen that specialized approaches for quantifier instantiation in the spirit of Section~\ref{sec:cegqi} 
-are highly effective for theories such as linear real and integer arithmetic~\cite{}.
+are highly effective for pure linear real and integer arithmetic~\cite{}.
 There is potential for improving support for quantified formulas over fixed-width bitvectors,
-where note that the bit-precise versions of arithmetic operators are part of the signature supported by many SMT solvers.
+where the bit-precise versions of arithmetic operators are part of the signature supported by many SMT solvers.
 We expect analogous techniques for selecting instantiations to be helpful in this case.
 It has further yet to be determined how counterexample-guided instantiation techniques can be adapted
 for other theories such as non-linear arithmetic, unbounded character strings, finite sets, and floating points, 
-which a number of SMT solvers have recently added support for.
+which a number of SMT solvers have recently added support for~\cite{}.
 
 E-matching techniques
 are often highly effective and well-behaved for fragments where theory symbols are scarce.
