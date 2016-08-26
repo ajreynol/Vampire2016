@@ -689,7 +689,18 @@ but does not have a model where $f$ is almost constant.
 \section{Counterexample-Guided Instantiation}
 \label{sec:cegqi}
 
-[Restate challenges]
+We have seen three classes of general-purpose techniques 
+for instantiation for quantified formulas in SMT.
+The common thread thus far has been that {\bf determining the satisfiability of universally quantified formulas in presence
+of uninterpreted functions and theory symbols is challenging}, and in fact is undecidable in general.
+However, when no uninterpreted function symbols are present and our background theory admits quantifier elimination, 
+e.g. linear real and integer arithmetic,
+then satisfiability can be established by a quantifier elimination procedure~\cite{}.
+
+Recent work has adapted quantifier elimination techniques in the context of SMT solving~\cite{},
+and has been implemented in SMT solvers such as Z3~\cite{} and \cvc~\cite{},
+as well as tools that use SMT solvers as a backend~\cite{}.
+Abstractly, these approaches can 
 
 [Quantifier Elimination]
 
@@ -710,11 +721,11 @@ but does not have a model where $f$ is almost constant.
 
 \begin{figure}[t]
 \begin{framed}
-$\funcqi( E, Q )$:
+$\funcqi( E, Q )$: \\
 \begin{enumerate}
 \item[\ ] Do one of the following:
 \begin{itemize}
-\item[{\bf (Conflicts)}]  
+\item[{\bf (Conflicts)}]
 \begin{itemize}
 \item[\ ] If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\forall \vec x\, \varphi[ \vec x ] \in Q$,
 \begin{enumerate}
@@ -745,11 +756,28 @@ $\funcqi( E, Q )$:
 
 \subsection{Future Work}
 
-[Engineering existing]
+There is still a lot of room to improve upon current implementations of quantifier instantiation in SMT solvers,
+both in terms of engineering and in theory.
+For the former, it has yet to be explored how conflict-based instantiation can be implemented eagerly,
+and if it can be efficiently applied in the presence of background theories.
 
-[Counterexample-guided for theories]
+For the latter, there are a number of opportunities to extend SMT solvers with efficient dedicated support for
+new fragments of interest.
+For example, we have seen that specialized approaches for quantifier instantiation in the spirit of Section~\ref{sec:cegqi} 
+are highly effective for theories such as linear real and integer arithmetic~\cite{}.
+There is potential for improving support for quantified formulas over fixed-width bitvectors,
+where note that the bit-precise versions of arithmetic operators are part of the signature supported by many SMT solvers.
+We expect analogous techniques for selecting instantiations to be helpful in this case.
+It has further yet to be determined how counterexample-guided instantiation techniques can be adapted
+for other theories such as non-linear arithmetic, unbounded character strings, finite sets, and floating points, 
+which a number of SMT solvers have recently added support for.
 
-[Combining E-matching + counterexample-guided]
+E-matching techniques
+are often highly effective and well-behaved for fragments where theory symbols are scarce.
+Conversely, recent techniques for quantifier instantiation are highly effective for quantifiers containing purely theory symbols.
+For tackling problems that depend both on reasoning about theories and uninterpreted functions,
+it is yet to fully understood to what extent these techniques can be combined,
+and how this combination can be implemented in practice.
 
 \bibliographystyle{abbrv}
 \bibliography{main}
