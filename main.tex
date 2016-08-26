@@ -333,7 +333,7 @@ $>$10M & 10 & 0.1\% & 0 & 0.0\% & 8 & 0.1\%  \\
 \\
 }
 \caption{Number of instantiations by implementations of E-matching in SMT solvers
-on benchmarks they solve with a 300 second timeout from SMT-LIB, TPTP and Isabelle. Data taken from~\cite{}.}
+on unsatisfiable benchmarks they solve with a 300 second timeout from SMT-LIB, TPTP and Isabelle. Data taken from~\cite{}.}
 \label{fig:results-inst}
 \end{figure}
 
@@ -504,7 +504,7 @@ but will spend more time per lemma added.
 \\
 }
 \caption{
-Details on benchmarks solved, and instances constructed by \cvc with and without conflict-based instantiation.
+Details on unsatisfiable benchmarks solved, and instances constructed by \cvc with and without conflict-based instantiation.
 }
 \label{fig:results-inst-detail}
 \end{figure}
@@ -514,7 +514,7 @@ Details on benchmarks solved, and instances constructed by \cvc with and without
 \includegraphics[scale=.22, angle=270]{scatter-cbqi.pdf} 
 }
 \caption{ Number of instantiations reported by
-{\bf cvc4+ci} vs {\bf cvc4} over all benchmarks.
+{\bf cvc4+ci} vs {\bf cvc4} over all unsatisfiable benchmarks.
 Data shown on a log-log scale.
 }
 \label{fig:cbqi-scatter}
@@ -606,25 +606,46 @@ by its interpretation in $\I$.
 \subsection{Impact}
 Model-based instantiation often enables SMT solvers to
 establish the satisfiability of inputs where exhaustive instantiation is infeasible.
-
+For example,
+in~\cite{}, an implementation of model-based quantifier instantiation is used
+in conjunction with finite model finding techniques in \cvc.
+Figure~\ref{fig:inst-mbqi} shows the impact of these techniques for the 1202
+benchmarks from the TPTP library that \cvc finds to be satisfiable.
+In both plots, the solid line plots the total number of possible instances of all quantified formulas
+in the (smallest) finite model found by \cvc.
+For instance, the quantified formula $\forall xyz : U\, P( x, y, z )$ has $2^3 = 8$ possible instantiations
+in a model that interprets $U$ as a set of size $2$.
 
 \begin{figure}[t]
 \centering
-\subfigure[Number of instantiations with MBQI.]{%
+\subfigure[Number of instantiations without MBQI.]{%
 \label{fig:results-tscatter}
 \includegraphics[scale=.22, angle=270]{model-size-nmbqi.pdf} 
 }
 \quad
-\subfigure[Number of instantiations without MBQI.]{%
+\subfigure[Number of instantiations with MBQI.]{%
 \label{fig:results-iscatter}
 \includegraphics[scale=.22, angle=270]{model-size-mbqi.pdf} 
 }%
 \caption{
 Number of instantiations added by \cvc with and without model-based quantifier instantiation
-on TPTP benchmarks with a 300 second timeout.
+on satisfiable TPTP benchmarks with a 30 second timeout.
 }
 \label{fig:inst-mbqi}
 \end{figure}
+
+The left plot of Figure~\ref{fig:inst-mbqi} shows the number of instances
+added by a strategy {\bf cvc4+f} that exhaustively instantiates all quantified formulas,
+where this number coincides with the number of possible instantiations for benchmarks for which
+{\bf cvc4+f} terminates with a model.
+This plot shows that {\bf cvc4+f} scales up to benchmarks having only around 100k instances;
+the maximum number of instances considered by {\bf cvc4+f} on a benchmark it solved was 323k.
+In contrast, the right plot of Figure~\ref{fig:inst-mbqi} shows the number of instances
+added with model-based quantifier instantiation ({\bf cvc4+fm}).
+This strategy solves a superset of the benchmarks solved by {\bf cvc4+f},
+solving some benchmarks having more than a billion possible instantiations,
+and often adding far fewer than the number of possible instantiations before terminating with a model
+as demonstrated by the points in the plot occurring below the solid line.
 
 \subsection{Completeness}
 We have now seen that SMT solvers may answer ``unsat" using quantifier instantatiation
@@ -691,24 +712,33 @@ but does not have a model where $f$ is almost constant.
 \begin{framed}
 $\funcqi( E, Q )$:
 \begin{enumerate}
-\item[\ ] If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\psi$ of the form $\forall \vec x\, \varphi[ \vec x ] \in Q$,
+\item[\ ] Do one of the following:
+\begin{itemize}
+\item[{\bf (Conflicts)}]  
+\begin{itemize}
+\item[\ ] If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\forall \vec x\, \varphi[ \vec x ] \in Q$,
 \begin{enumerate}
-\item[\ ] Return $( \text{``unknown"}, \{ \psi \Rightarrow \varphi[ \vec t ] \} )$.
+\item[\ ] Return $( \text{``unknown"}, \{ \forall \vec x\, \varphi[ \vec x ]  \Rightarrow \varphi[ \vec t ] \} )$.
 \end{enumerate}
-\item[\ ] Otherwise, do one of the following:
+\end{itemize}
+\item[{\bf(Heuristics)}]
+\begin{itemize}
+\item[\ ] Return $( \text{``unknown"}, L )$ based on e.g. E-matching.
+\end{itemize}
+\item[{\bf(Models)}]  
+\begin{itemize}
+\item[\ ] Let $\I$ be a model of $E$. 
+\item[\ ] If $\I \models \neg \varphi[ \vec t ]$ for some $\vec t$, $\forall \vec x\, \varphi[ \vec x ] \in Q$,
 \begin{enumerate}
-\item Return $( \text{``unknown"}, L )$, where $L$ is non-empty and selected by e.g. E-matching.
-\item Let $\I$ be a model of $E$. 
-\item[\ ] If $\I \models \neg \varphi[ \vec t ]$ for some $\vec t$, $\psi$ of the form $\forall \vec x\, \varphi[ \vec x ] \in Q$,
-\begin{enumerate}
-\item[\ ] Return $( \text{``unknown"}, \{ \psi \Rightarrow \varphi[ \vec t ] \}$ ).
+\item[\ ] Return $( \text{``unknown"}, \{ \forall \vec x\, \varphi[ \vec x ]  \Rightarrow \varphi[ \vec t ] \}$ ).
 \end{enumerate}
 \item[\ ] Otherwise, return $( \text{``sat"}, \emptyset )$.
-\end{enumerate}
+\end{itemize}
+\end{itemize}
 \end{enumerate}
 \end{framed}
 \vspace{-2ex}
-\caption{Outline of techniques for quantifier instantiation in SMT.
+\caption{Summary of techniques for quantifier instantiation in SMT.
 \label{fig:smtqi}}
 \end{figure}
 
