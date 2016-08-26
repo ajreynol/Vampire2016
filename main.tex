@@ -401,24 +401,51 @@ and consider these with higher priority than others.
 
 In detail, given a quantified formula $\forall \vec x\, \varphi[ \vec x ]$ in $Q$,
 we say that $\varphi[ \vec t ]$ is a \emph{conflicting instance} for $( E, Q )$ if $E, \varphi[ \vec t ] \models_T \bot$.
-If a single conflicting instance exists for $(E, Q )$, then it suffices to return only that instance
-and 
+If a single conflicting instance exists for $(E, Q )$, then we already know that $E \cup Q$ is unsatisfiable,
+and may return \emph{only} that instance.
+
+\begin{example}
+Let $E$ be the set $\{ P(a), \neg P(d), \neg P( c ), \neg R(b), \neg R(a), \neg R(d) \}$ where $a,b,c,d$ are free constants and $P,R$ are unary predicates.
+Let $\psi$ be $\forall x\, P( x ) \vee R( x )$.
+Recall that E-matching would return instances corresponding to substituting terms $a,b,c,d$ for $x$
+assuming $P( x )$ and $R( x )$ are chosen as patterns.
+However, consider the result of what we learn from these instantiations relative to information we already know from $E$:
+\[
+\begin{array}{rcl}
+E, P( a ) \vee R( a ) &\models& \top \\
+E, P( b ) \vee R( b ) &\models& P( b ) \\
+E, P( c ) \vee R( c ) &\models& R( c ) \\
+E, P( d ) \vee R( d ) &\models& \bot \\
+\end{array}
+\]
+In other words, since $P( b ) \in E$, we learn no new information from the first instance,
+whereas since $\neg P( d ), \neg R( d ) \in E$, we learn $\bot$ from the fourth instance.
+In this example, $P( d ) \vee R( d )$ is a conflict instance for $( E, \{ \psi \} )$.
+Conflict-based instantiation would return this lemma only and discard the others.
+\qed
+\end{example}
+
+This technique can be extended to find instantiations that are conflicting taking into account equality and uninterpreted functions.
 
 \begin{example}
 \end{example}
-
-[Example]
-
 [Extension to EUF]
 
 [Intuition]
 
 \subsection{Impact}
 
+
+
 \subsection{Challenge: Finding Conflicting Instances}
+A key challenge behind conflict-based instantiation
+is identifying which instantiations are conflicting in an efficient manner.
+
 
 \section{Model-Based Instantiation}
 \label{sec:mbqi}
+
+
 
 [Introduction]
 
