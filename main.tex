@@ -86,7 +86,8 @@ This paper will focus primarily on recent techniques for quantifier instantiatio
 In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers with support for quantified formulas.
 We then focus on three general-purpose instantiation strategies for handling quantified formulas in SMT:
 \begin{itemize}
-\item Section~\ref{sec:ematching} will discuss widely-used \emph{heuristic} methods based on pattern-matching,
+\item Section~\ref{sec:ematching} will discuss \emph{heuristic} techniques for quantifier instantiation based on pattern-matching that
+are widely-used by current solvers,
 \item Section~\ref{sec:cbqi} will discuss how finding \emph{conflicts} can improve the ability of solvers to answer ``unsat",
 \item Section~\ref{sec:mbqi} will examine how constructing candidate \emph{models} can enable the solvers to answer ``sat".
 \end{itemize} 
@@ -400,10 +401,11 @@ we will build candidate \emph{models}.
 \section{Conflict-Based Instantiation}
 \label{sec:cbqi}
 
-As mentioned, E-matching often generates an overabundance of instantiation lemmas, many of which are irrelevant to the satisfiability of our input,
-which in turn degrade the performance of the SMT solver.
+As mentioned, E-matching often generates an overabundance of instantiation lemmas, 
+many of which are irrelevant to the satisfiability of our input,
+and which degrade the performance of the SMT solver.
 To address this shortcoming, we may use a technique which we will refer to as \emph{conflict-based quantifier instantiation}.
-This technique was introduced in the context of a modern SMT solving in~\cite{}, and has been implemented in a few recent systems~\cite{}.
+This technique was introduced in the context of a modern SMT solving in~\cite{}, and has been implemented in recent solvers~\cite{}.
 %The basic idea is to identify instantiation lemmas that are in \emph{conflict} with the current context, 
 %and consider such lemmas with higher priority than the others.
 
@@ -419,10 +421,10 @@ Recall that E-matching would return instances corresponding to substituting term
 assuming $P( x )$ and $R( x )$ are chosen as patterns.
 However, consider the result of what we learn from these instantiations relative to information we already know from $E$:
 \[
-\begin{array}{rcl}
-E, P( a ) \vee R( a ) &\models& \top \\
+\begin{array}{rcl@{\hspace{1em}}rcl}
+E, P( a ) \vee R( a ) &\models& \top &
 E, P( b ) \vee R( b ) &\models& P( b ) \\
-E, P( c ) \vee R( c ) &\models& R( c ) \\
+E, P( c ) \vee R( c ) &\models& R( c ) &
 E, P( d ) \vee R( d ) &\models& \bot \\
 \end{array}
 \]
@@ -457,7 +459,16 @@ In this case, we say that $f( g( b ) ) = h( f( b ) )$ is a \emph{propagating ins
 
 In summary, the goal of conflict-based instantiation is to {\bf from $Q$, 
 learn conflicts and equalities between ground terms in $E$}.
-
+We run conflict-based instantiation prior to running E-matching.
+A revised strategy for quantifier instantiation is the following:
+\begin{enumerate}
+\item If there exists a conflicting instance $\varphi[ \vec t ]$ for $( E, Q )$, 
+return $\{ \forall \vec x\, \varphi[ \vec x ] \Rightarrow \varphi[ \vec t ] \}$ only,
+\item Otherwise, if there exists a non-empty set of propagating instances $\{ \varphi_1[ \vec t_1 ], \ldots \varphi_n[ \vec t_n ] \}$ for $( E, Q )$,
+return $\{ \forall \vec x_1\, \varphi_1[ \vec x_1 ] \Rightarrow \varphi_1[ \vec t_1 ], \ldots, \forall \vec x_n\, \varphi_n[ \vec x_n ] \Rightarrow \varphi_n[ \vec t_n ] \}$ only.
+\item Otherwise, return the instantiation lemmas returned by E-matching.
+\end{enumerate}
+It is important to
 
 \subsection{Impact}
 
@@ -497,37 +508,58 @@ Details on benchmarks solved, and instances constructed by \cvc with and without
 
 Figure~\ref{fig:results-inst-detail}
 gives a detailed summary of the impact of conflict-based instantiation in the SMT solver \cvc
-on the SMT-LIB, TPTP, and Isabelle benchmark libraries\footnote{Further details are given in~\cite{}.}
+on the SMT-LIB, TPTP, and Isabelle benchmark libraries (further details are given in~\cite{}).
 Firstly, column 3 shows that \cvc with conflict-based instantiation, as indicated by {\bf cvc4+ci},
 solves significantly more benchmarks with respect to \cvc without.
 In addition, it uses significantly fewer instantiations overall to solve these benchmarks.
 Column 4 gives the aggregate number of instantiation rounds (IR) taken by these configurations
-(in the context of Figure~\ref{fig:smtq}, this is the number of calls to $\funcqi$),
-and column 5 gives the number of instantiation lemmas returned in these rounds.
+(in terms of Figure~\ref{fig:smtq}, the number of instantiation rounds is equal to the number of calls to $\funcqi$).
+Column 5 gives the number of instantiation lemmas returned in these rounds.
+We can see that the overall number of instantiations added by {\bf cvc4+ci} is approximately
+a factor of five times fewer than {\bf cvc4}.
+
+
 Columns 6-11 give the percentage of instantiation rounds (IR) taken by the solver 
+for which it returns instantiations based on E-matching, a conflicting instance,
+or propagating instance(s).
+
 
 \subsection{Challenge: Finding Conflicting Instances}
 A key challenge behind conflict-based instantiation
 is identifying which instantiations are conflicting in an efficient manner.
 A naive approach would be to construct the set of instantiations E-matching.
-
-However, this 
+However, this is clear
+%and in fact partially negates our original motivation for avoiding this construction.
 
 
 \section{Model-Based Instantiation}
 \label{sec:mbqi}
 
+We have seen that E-matching is an incomplete procedure,
+that is, when it terminates with no instantiation lemmas, this does not imply that our input is satisfiable.
+\emph{Model-based instantiation} is technique that addresses this shortcoming,
+which was introduced in the context of modern SMT solving in~\cite{},
+and has since been implemented in several solvers~\cite{}.
 
 
-[Introduction]
-
-[Example]
+\begin{example}
+\end{example}
 
 \subsection{Impact}
 
-\subsection{Completeness}
 
+Model-based instantiation often enables SMT solvers to
+establish the satisfiability of inputs where exhaustive instantiation is infeasible.
+
+
+\subsection{Completeness}
 [Fixed-finite, finite, finite instantiation]
+
+Model-based instantiation techniques are clearly complete
+when the domains of quantified formulas have a fixed finite interpretation
+such in quantified Boolean formulas~\cite{},
+or quantified bit-vectors.
+
 
 \subsection{Challenge: Constructing Models}
 
@@ -553,6 +585,31 @@ However, this
 [for UF]
 
 [for no UF]
+
+
+\begin{figure}[t]
+\begin{framed}
+$\funcsmtsolve( \Gamma )$:
+$\funcqi( E, Q )$:
+\begin{enumerate}
+\item[\ ] If $E \models_T \neg \varphi[ \vec t ]$ for some $\vec t$, $\psi$ of the form $\forall \vec x\, \varphi[ \vec x ] \in Q$,
+\begin{enumerate}
+\item[\ ] Return $( \text{``unknown"}, \{ \psi \Rightarrow \varphi[ \vec t ] \} )$.
+\end{enumerate}
+\item[\ ] 
+\item[\ ] Let $\I$ be a model of $E$. 
+\item[\ ] If $\I \models \neg \varphi[ \vec t ]$ for some $\vec t$, $\psi$ of the form $\forall \vec x\, \varphi[ \vec x ] \in Q$,
+\begin{enumerate}
+\item[\ ] Return $( \text{``unknown"}, \{ \psi \Rightarrow \varphi[ \vec t ] \}$ ).
+\end{enumerate}
+\item[\ ] Otherwise, return $( \text{``sat"}, emptyset )$.
+\end{enumerate}
+\end{framed}
+\vspace{-2ex}
+\caption{Outline of techniques for quantifier instantiation in SMT.
+\label{fig:smtqi}}
+\end{figure}
+
 
 \subsection{Future Work}
 
