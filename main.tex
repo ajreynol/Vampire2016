@@ -637,8 +637,8 @@ Figure~\ref{fig:inst-mbqi} shows the impact of these techniques for the 1202
 benchmarks from the TPTP library that \cvc finds to be satisfiable.
 In both plots, the solid line plots the total number of possible instances of all quantified formulas
 in the (smallest) finite model found by \cvc.
-For instance, the quantified formula $\forall xyz : U\, P( x, y, z )$ has $2^3 = 8$ possible instantiations
-in a model that interprets $U$ as a set of size $2$.
+For instance, the quantified formula $\forall xyz\, P( x, y, z )$ has $2^3 = 8$ possible instantiations
+in a model that interprets the domain of $x,y,z$ each as a set of size $2$.
 
 \begin{figure}[t]
 \centering
@@ -730,22 +730,23 @@ $\varphi[ \vec t_1, \vec k ] \vee \ldots \vee \varphi[ \vec t_n, \vec k ]$ where
 We may alternatively consider a lazy quantifier \emph{instantiation} procedure for establishing the satisfiability 
 $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$ that considers instantiations of the form 
 $\neg \varphi[ \vec t_i, \vec k ]$ where $\vec t_i$ is one of $t_1, \ldots, t_n$.
-Assuming only instantiations of this form are considered by the procedure, it is complete.
+Assuming only instantiations of this form are considered by the procedure, it is terminating.
+Moreover, we may terminate as soon as we discover a set of instantiations $\{ \neg \varphi[ \vec t_{i1}, \vec k ], \ldots, \neg \varphi[ \vec t_{im}, \vec k ] \}$ that either
+$T$-unsatisfiable, or are $T$-satisfiable and entail $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$.
+An approach for doing so is given in~\cite{}, which selects instantiations based on the current set of constraints.
+\begin{example}
 
-
-
-[Quantifier Elimination]
-
-[Basic idea]
-
-[Example]
+\end{example}
 
 [Results]
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-\subsection{Summary}
+To summarize,
+we have seen strategies for quantifier instantiation
+based on heuristics, conflicts, and models.
+These are summarized in Figure~\ref{fig:smtqi}.
 
 \begin{figure}[t]
 \begin{framed}
