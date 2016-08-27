@@ -82,9 +82,9 @@ can be handled well in practice by modern automated theorem provers and SMT solv
 
 
 A growing number of modern tools exist for reasoning about first-order quantified formulas.
-A number of automated theorem prover,
-(such as Vampire~\cite{DBLP:conf/cav/KovacsV13}, E~\cite{schulz2002brainiac}, and SPASS~\cite{weidenbach2009spass}), were originally developed to target 
-quantified formulas in single-sorted first-order logic.
+A number of automated theorem provers
+such as Vampire~\cite{DBLP:conf/cav/KovacsV13}, E~\cite{schulz2002brainiac}, and SPASS~\cite{weidenbach2009spass})
+were developed to target quantified formulas in single-sorted first-order logic.
 More recently, these solvers have been extended with dedicated support for background theories~\cite{}.
 For the most part, theorem provers from this community are superposition-based,
 although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{ganzinger2003new}.
@@ -92,7 +92,7 @@ A recent approach known as AVATAR~\cite{DBLP:conf/cade/RegerSV15} leverages supp
 in combination with a superposition-based theorem prover.
 
 In contrast to most of these automated theorem provers, 
-SMT solvers (such as CVC~\cite{stump2002cvc}, Yices~\cite{dutertre2006yices}, and Z3~\cite{Z3}), 
+SMT solvers such as CVC~\cite{stump2002cvc}, Yices~\cite{dutertre2006yices}, and Z3~\cite{Z3}, 
 were originally developed to target quantifier-free formulas in background theories,
 but have more recently been extended with support for universally quantified formulas.
 The approaches here are mostly instantiation-based based~\cite{Detlefs03simplify:a,MouraBjoerner07,GeBarrettTinelli07},
@@ -169,8 +169,8 @@ $\funcqi( E, Q )$:
 \begin{enumerate}
 \item[\ ] Do one of the following:
 \begin{enumerate}
-\item[\ ] Return $( \text{``sat"}, \emptyset )$, if $E \cup Q$ is $T$-satisfiable.
 \item[\ ] Return $( \text{``unknown"}, L )$ for some set $L$ of $T$-lemmas.
+\item[\ ] Return $( \text{``sat"}, \emptyset )$, if $E \cup Q$ is $T$-satisfiable.
 \end{enumerate}
 \end{enumerate}
 \end{internallinenumbers}
@@ -694,7 +694,7 @@ It is worth noting when these solvers are guaranteed eventually to terminate.
 
 Approaches that incorporate model-based instantiation are clearly terminating
 when the domains of quantified formulas have a fixed finite interpretation
-such in quantified Boolean formulas (QBF)~\cite{},
+such in quantified Boolean formulas (QBF)~\cite{janota2012solving},
 or quantified bit-vectors~\cite{wintersteiger2013efficiently}.
 For quantified formulas over unintepreted sorts,
 finite model finding approaches~\cite{ReyEtAl-CADE-13} are generally finite-model complete,
@@ -722,8 +722,6 @@ This formula has a model where for instance $f$ is interpreted as $\lambda xy\, 
 but does not have a model where $f$ is almost constant.
 \qed
 \end{example}
-
-
 
 \section{Specialized Instantiation for Theories}
 \label{sec:cegqi}
@@ -761,7 +759,10 @@ An approach for doing so is given in~\cite{}, which selects instantiations based
 To summarize,
 we have seen strategies for quantifier instantiation
 based on heuristics, conflicts, and models.
-These are summarized in Figure~\ref{fig:smtqi}.
+These are summarized in Figure~\ref{fig:smtqi},
+a strategy for quantifier instantiation may give priority to instantiations
+in the order the techniques are listed, that is, it prefers
+returning conflicting instances with highest priority.
 
 \begin{figure}[t]
 \begin{framed}
@@ -784,20 +785,20 @@ $\funcqi( E, Q )$: \\
 \end{enumerate}
 \end{framed}
 \vspace{-2ex}
-\caption{Summary of techniques for quantifier instantiation in SMT.
+\caption{Summary of techniques for quantifier instantiation in SMT, as subprocedure of Figure~\ref{fig:smtq}.
 \label{fig:smtqi}}
 \end{figure}
-
 
 \subsection{Future Work}
 
 There is room to improve upon current implementations of quantifier instantiation in SMT solvers,
 both in terms of engineering and theory.
 There are many design decisions behind all strategies mentioned in this paper, 
-many of which are not mentioned here and have yet to be explored.
+many of which are not mentioned here.
 For instance, it has yet to be explored how conflict-based instantiation can be implemented eagerly,
 and if it can be efficiently applied in the presence of background theories.
-There is also potential for incorporating more advanced techniques for model construction in model-based quantifier instantiation.
+There is also potential for incorporating more advanced constructions 
+for model-based quantifier instantiation.
 
 Additionally, there are a number of opportunities to extend SMT solvers with efficient dedicated support for
 new fragments of first order logic of interest.
