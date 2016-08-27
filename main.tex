@@ -61,35 +61,42 @@ that are specialized to background theories such as linear real and integer arit
 [SMT solvers now handle quantifiers]
 Satisifiability Modulo Theories (SMT) solvers 
 
-[Important in Applications]
 
-The use of quantified formulas is highly important in a number of applications,
-including automated theorem proving~\cite{}, software verification~\cite{}, synthesis~\cite{}, and planning~\cite{}.
+The use of quantified formulas is highly important in a number of applications.
+Among these, in automated theorem proving applications~\cite{},
+quantified formulas
+In software verification~\cite{},
 
-[Challenging in Theory]
+In synthesis~\cite{},
+
+In planning~\cite{},
 
 
-[Handled well in Practice]
+Unfortunately, reasoning about quantified formulas is very challenging in theory, and
+in only limited cases does the satisfiability problem remain decidable.
+
+
 In spite of the theoretical challenges, quantified formulas
 can be handled well in practice by modern automated theorem provers and SMT solvers.
 
 
+
 A growing number of modern tools exist for reasoning about first-order quantified formulas.
 A number of automated theorem prover,
-(such as Vampire~\cite{}, E~\cite{}, and SPASS~\cite{}), were originally developed to target 
+(such as Vampire~\cite{DBLP:conf/cav/KovacsV13}, E~\cite{schulz2002brainiac}, and SPASS~\cite{weidenbach2009spass}), were originally developed to target 
 quantified formulas in single-sorted first-order logic.
 More recently, these solvers have been exten
 For the most part, theorem provers from this community are superposition-based,
-although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{}.
-A recent approach known as AVATAR~\cite{} leverages support in SAT and SMT solvers for quantifier-free formulas,
+although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{ganzinger2003new}.
+A recent approach known as AVATAR~\cite{DBLP:conf/cade/RegerSV15} leverages support in SAT and SMT solvers for quantifier-free formulas
 in combination with a superposition-based theorem prover.
 
 In contrast to most of these automated theorem provers, 
-SMT solvers (such as CVC~\cite{}, Yices~\cite{}, and Z3~\cite{}), 
+SMT solvers (such as CVC~\cite{stump2002cvc}, Yices~\cite{dutertre2006yices}, and Z3~\cite{Z3}), 
 were originally developed to target quantifier-free formulas in background theories,
 but have more recently been extended with support for universally quantified formulas.
-The approaches here are mostly instantiation-based based~\cite{},
-although some approaches are based on superposition~\cite{}.
+The approaches here are mostly instantiation-based based~\cite{Detlefs03simplify:a,MouraBjoerner07EfficientEmatchingSmtSolvers,GeBarrettTinelli07SolvingQuantifiedVerificationConditionsUsingSatisfiability,},
+although some approaches are based on superposition~\cite{de2008engineering}.
 
 This paper will focus primarily on recent techniques for quantifier instantiation in SMT solvers.
 In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers with support for quantified formulas.
@@ -108,7 +115,7 @@ Finally, we conclude in Section~\ref{sec:conclusion} with a summary and mention 
 \label{sec:quant}
 
 Most modern SMT solvers are based on the DPLL($T$) solving architecture,
-where a set of decision procedures for $T$ are modularly combined with a SAT solver for propositional satisfiability~\cite{}.
+where a set of decision procedures for $T$ are modularly combined with a SAT solver for propositional satisfiability~\cite{nieuwenhuis2006solving}.
 Given a set of $T$-formulas $\Gamma$ as input to a DPLL($T$)-based SMT solver, its underlying SAT solver
 abstracts each $T$-literal in $\Gamma$ as unique Boolean variable.
 The SAT solver clausifies $\Gamma$ and returns that 
@@ -194,12 +201,12 @@ We will examine such an implementation in this paper, in particular addressing t
 \end{itemize}
 
 It is important to note that some SMT approaches to quantified formulas
-reason about quantified formulas \emph{eagerly} during the DPLL($T$) search~\cite{}.
+reason about quantified formulas \emph{eagerly} during the DPLL($T$) search~\cite{MouraBjoerner07EfficientEmatchingSmtSolvers}.
 In terms of Figure~\ref{fig:smtq}, these approaches invoke $\funcqi$
 when $M$ is incomplete and does not necessarily propositionally entail all formulas in $\Gamma$.
 The advantage of doing so is that lemmas returned by $\funcqi$ may help prune the search,
-while the disadvantage is that calling $\funcqi$ may be expensive and lead to non-termination.
-For simplicity, we assume a lazy approach for handling quantified formulas.
+while the disadvantage is that calling $\funcqi$ may be expensive.
+%For simplicity, we assume a lazy approach for handling quantified formulas.
 
 \subsection{Skolemization and Instantiation}
 Common implementations of $\funcqi( E, Q )$ in SMT solvers return sets $L$ consisting of $T$-lemmas of the following two forms:
@@ -222,9 +229,9 @@ We examine various strategies for selecting instantiation lemmas in Sections~\re
 
 The most widely used technique for quantifier instantiation in SMT a heuristic technique known as \emph{E-matching}.
 It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{}.
-Recently, variants of the approach have been implemented in a number of successful SMT solvers~\cite{}.
+Recently, variants of the approach have been implemented in a number of successful SMT solvers~\cite{Detlefs03simplify:a,Z3,CVC4-CAV-11}.
 The support for E-matching in these solvers is critical to the success of high-level tools for 
-software verfication~\cite{} and automated theorem proving~\cite{}.
+software verfication~\cite{DBLP:conf/icse/Leino04,DBLP:conf/itp/ChapmanS14} and automated theorem proving~\cite{blanchette2013extending,bobot2011why3}.
 E-matching chooses instances for quantified formulas $\forall \vec x\, \varphi$
 based on \emph{pattern terms} whose free variables are $\vec x$.
 We will write $p[ \vec x ]$ to denote a term whose free variables are $\vec x$.
@@ -298,8 +305,8 @@ This intuition will be revisited in Section~\ref{sec:cbqi}.
 
 \subsection{Pattern Selection}
 There is no standard way to determine which patterns to select in E-matching.
-The performance of SMT solvers is highly dependent upon having a good pattern selection, as noted in recent work~\cite{}.
-In practice, patterns for quantified formulas can be can either be selected manually by the user~\cite{},
+The performance of SMT solvers is highly dependent upon having a good pattern selection, as studied in recent work~\cite{DBLP:conf/cav/LeinoP16}.
+In practice, patterns for quantified formulas can be can either be selected manually by the user,
 or selected automatically by the SMT solver.
 
 For the latter, SMT solvers typically select patterns for $\forall \vec x\, \varphi$ that are subterms $\varphi$,
@@ -341,7 +348,7 @@ $>$10M & 10 & 0.1\% & 0 & 0.0\% & 8 & 0.1\%  \\
 \\
 }
 \caption{Number of instantiations by implementations of E-matching in SMT solvers
-on unsatisfiable benchmarks they solve with a 300 second timeout from SMT-LIB, TPTP and Isabelle. Data taken from~\cite{}.}
+on unsatisfiable benchmarks they solve with a 300 second timeout from SMT-LIB, TPTP and Isabelle. Data taken from~\cite{ReynoldsTinelliMoura14}.}
 \label{fig:results-inst}
 \end{figure}
 
@@ -393,7 +400,7 @@ However, $Q$ clearly is $T$-unsatisfiable.
 
 Thus, when E-matching saturates with no instances, some SMT solvers will terminate with ``unknown"
 or revert to more aggressive techniques for finding instantiations.
-Some variants of E-matching ensure completeness by a particular pattern selection specialized the quantified formulas in question~\cite{}.
+Some variants of E-matching ensure completeness by a particular pattern selection specialized the quantified formulas in question~\cite{dross2016adding,bansaldeciding}.
 However, these approaches require an external pencil-and-paper proof by the user and not fully automated.
 
 \begin{comment}
@@ -414,7 +421,8 @@ As mentioned, E-matching often generates an overabundance of instantiation lemma
 many of which are irrelevant to the satisfiability of our input,
 and which degrade the performance of the SMT solver.
 To address this shortcoming, we may use a technique which we will refer to as \emph{conflict-based quantifier instantiation}.
-This technique was introduced in the context of a modern SMT solving in~\cite{}, and has been implemented in recent solvers~\cite{}.
+This technique was introduced in the context of a modern SMT solving in~\cite{ReynoldsTinelliMoura14}, 
+and has been implemented in solvers such as \cvc and veriT~\cite{DBLP:conf/cade/BoutonODF09,DBLP:conf/cade/Barbosa16}.
 %The basic idea is to identify instantiation lemmas that are in \emph{conflict} with the current context, 
 %and consider such lemmas with higher priority than the others.
 
@@ -728,9 +736,9 @@ of uninterpreted functions and theory symbols is challenging, and in fact is und
 However, when no uninterpreted function symbols are present and our background theory admits quantifier elimination, 
 e.g. linear real and integer arithmetic, then satisfiability 
 can be established by a quantifier elimination procedure~\cite{}.
-Recent work has adapted quantifier elimination techniques in the context of SMT solving~\cite{},
-and has been implemented in SMT solvers such as Z3~\cite{}, \cvc~\cite{},
-as well as tools that use SMT solvers as a backend~\cite{}.
+Recent work has adapted quantifier elimination techniques in the context of SMT solving~\cite{monniaux2010quantifier,ReynoldsDKBT15Cav,DBLP:conf/lpar/BjornerJ15},
+and has been implemented in SMT solvers
+as well as tools that use SMT solvers as a backend~\cite{komuravelli2014smt,DBLP:conf/lpar/FedyukovichGS15}.
 
 Let $\exists \vec x\, \varphi[ \vec x, \vec k ]$ be a quantified formula in a background theory $T$.
 Assuming $T$ admits quantifier elimination, we know that this formula is equivalent to some finite disjunction
@@ -795,7 +803,7 @@ There is also potential for incorporating more advanced techniques for model con
 Additionally, there are a number of opportunities to extend SMT solvers with efficient dedicated support for
 new fragments of first order logic of interest.
 For example, we have seen that specialized approaches for quantifier instantiation in the spirit of Section~\ref{sec:cegqi} 
-are highly effective for pure linear real and integer arithmetic~\cite{}.
+are highly effective for pure linear real and integer arithmetic~\cite{ReynoldsDKBT15Cav,DBLP:conf/lpar/BjornerJ15}.
 There is potential for improving support for quantified formulas over fixed-width bitvectors,
 where the bit-precise versions of arithmetic operators are part of the signature supported by many SMT solvers.
 We expect analogous techniques for selecting instantiations to be helpful in this case.
