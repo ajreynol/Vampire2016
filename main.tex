@@ -85,7 +85,7 @@ A growing number of modern tools exist for reasoning about first-order quantifie
 A number of automated theorem prover,
 (such as Vampire~\cite{DBLP:conf/cav/KovacsV13}, E~\cite{schulz2002brainiac}, and SPASS~\cite{weidenbach2009spass}), were originally developed to target 
 quantified formulas in single-sorted first-order logic.
-More recently, these solvers have been exten
+More recently, these solvers have been extended with dedicated support for background theories~\cite{}.
 For the most part, theorem provers from this community are superposition-based,
 although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{ganzinger2003new}.
 A recent approach known as AVATAR~\cite{DBLP:conf/cade/RegerSV15} leverages support in SAT and SMT solvers for quantifier-free formulas
@@ -95,7 +95,7 @@ In contrast to most of these automated theorem provers,
 SMT solvers (such as CVC~\cite{stump2002cvc}, Yices~\cite{dutertre2006yices}, and Z3~\cite{Z3}), 
 were originally developed to target quantifier-free formulas in background theories,
 but have more recently been extended with support for universally quantified formulas.
-The approaches here are mostly instantiation-based based~\cite{Detlefs03simplify:a,MouraBjoerner07EfficientEmatchingSmtSolvers,GeBarrettTinelli07SolvingQuantifiedVerificationConditionsUsingSatisfiability,},
+The approaches here are mostly instantiation-based based~\cite{Detlefs03simplify:a,MouraBjoerner07,GeBarrettTinelli07},
 although some approaches are based on superposition~\cite{de2008engineering}.
 
 This paper will focus primarily on recent techniques for quantifier instantiation in SMT solvers.
@@ -131,7 +131,7 @@ which is often referred to as a conflict clause.
 %In DPLL($T$), each theory literal and closed universally quantified formula is abstracted as a unique Boolean variable.
 %The underlying SAT solver 
 
-DPLL($T$)-based SMT solvers have been extended in the past decade with approaches for univeral and existential quantification~\cite{}.
+DPLL($T$)-based SMT solvers have been extended in the past decade with approaches for univeral and existential quantification~\cite{Detlefs03simplify:a,MouraBjoerner07,GeBarrettTinelli07}.
 For consistency, in this paper we assume all existential quantification is rewritten to universal quantification by the rewrite:
 \[
 \exists \vec x\, P( \vec x ) \transform \neg \forall \vec x\, \neg P( \vec x )
@@ -201,7 +201,7 @@ We will examine such an implementation in this paper, in particular addressing t
 \end{itemize}
 
 It is important to note that some SMT approaches to quantified formulas
-reason about quantified formulas \emph{eagerly} during the DPLL($T$) search~\cite{MouraBjoerner07EfficientEmatchingSmtSolvers}.
+reason about quantified formulas \emph{eagerly} during the DPLL($T$) search~\cite{MouraBjoerner07}.
 In terms of Figure~\ref{fig:smtq}, these approaches invoke $\funcqi$
 when $M$ is incomplete and does not necessarily propositionally entail all formulas in $\Gamma$.
 The advantage of doing so is that lemmas returned by $\funcqi$ may help prune the search,
@@ -228,8 +228,8 @@ We examine various strategies for selecting instantiation lemmas in Sections~\re
 \label{sec:ematching}
 
 The most widely used technique for quantifier instantiation in SMT a heuristic technique known as \emph{E-matching}.
-It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{}.
-Recently, variants of the approach have been implemented in a number of successful SMT solvers~\cite{Detlefs03simplify:a,Z3,CVC4-CAV-11}.
+It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{Nelson:1980:TPV:909447}.
+Recently, variants of the approach have been implemented in a number of solvers~\cite{Detlefs03simplify:a,DBLP:conf/cav/BarrettT07,Z3,DBLP:conf/cade/BoutonODF09,CVC4-CAV-11,DBLP:conf/lpar/Rummer12}.
 The support for E-matching in these solvers is critical to the success of high-level tools for 
 software verfication~\cite{DBLP:conf/icse/Leino04,DBLP:conf/itp/ChapmanS14} and automated theorem proving~\cite{blanchette2013extending,bobot2011why3}.
 E-matching chooses instances for quantified formulas $\forall \vec x\, \varphi$
@@ -323,7 +323,7 @@ For example, for $R( x, y ) \wedge R( y, z ) \Rightarrow R( x, z )$, then the se
 E-matching would add an instance for this multi-pattern if it could find a substitution for $x, y, z$
 that simulatenously matched both of these terms to ground terms in the current context.
 Multi-patterns tend to lead to many instantiations, and hence they tend to be chosen with lower priority.
-It is yet to be explored how recent techniques for literal selection in automated theorem provers~\cite{}
+It is yet to be explored how recent techniques for literal selection in automated theorem provers~\cite{DBLP:conf/cade/HoderR0V16}
 relate to pattern selection in SMT solvers.
 
 \subsection{Challenge: Too Many Instances}
@@ -353,8 +353,9 @@ on unsatisfiable benchmarks they solve with a 300 second timeout from SMT-LIB, T
 \end{figure}
 
 One of the central challenges when using E-matching is dealing with the large number of instantiations it generates.
-Figure~\ref{fig:results-inst} gives statistics on the number of instantiations returned by three implementations of E-matching in recent SMT solvers~\cite{}
-on benchmarks they solve from the the SMT-LIB library~\cite{}, the TPTP library~\cite{}, and Isabelle~\cite{}.
+Figure~\ref{fig:results-inst} gives statistics on the number of instantiations returned by three implementations of E-matching in recent SMT solvers~\cite{DBLP:conf/cav/BarrettT07,CVC4-CAV-11,Z3}
+on benchmarks they solve from the the SMT-LIB library~\cite{BarST-SMTLIB}, the TPTP library~\cite{SS98}, 
+and the Isabelle proof assistant~\cite{blanchette2013extending}.
 For example, cvc4 solves 1853 benchmarks for which it added between 10 and 100 instantiation lemmas.
 We can see from this data that the median number of instantiations tends to be between 100 and 1000,
 and a majority of benchmarks taking between 10 and 10 thousand instantiations.
@@ -367,8 +368,7 @@ new instantiation lemmas and so on.
 In practice, it is common for E-matching to generate thousands of instantiations after executing only a handful of iterations,
 which in turn overload the quantifier-free component of the SMT solver (Lines 2-6 of Figure~\ref{fig:smtq}),
 thereby degrading the performance of the system significantly.
-
-It is important to note that E-matching may diverge on simple examples
+It is also important to note that E-matching may diverge on simple examples
 as demonstrated in the following example.
 
 \begin{example}
@@ -383,7 +383,7 @@ In absence of further heuristics, lemmas of this form will be added indefinitely
 The aforementioned case is often referred to as a \emph{matching loop}.
 Matching loops may be avoided by
 restricting pattern selection, or by
-considering instantiations in a bredth-first manner by tracking a ``level" on the terms introduced by instantiations~\cite{}.
+considering instantiations in a bredth-first manner by tracking a ``level" on the terms introduced by instantiations~\cite{GeBarrettTinelli07}.
 
 \subsection{Challenge: Incompleteness}
 
@@ -422,7 +422,7 @@ many of which are irrelevant to the satisfiability of our input,
 and which degrade the performance of the SMT solver.
 To address this shortcoming, we may use a technique which we will refer to as \emph{conflict-based quantifier instantiation}.
 This technique was introduced in the context of a modern SMT solving in~\cite{ReynoldsTinelliMoura14}, 
-and has been implemented in solvers such as \cvc and veriT~\cite{DBLP:conf/cade/BoutonODF09,DBLP:conf/cade/Barbosa16}.
+and has been implemented in solvers such as \cvc and veriT~\cite{DBLP:conf/cade/Barbosa16}.
 %The basic idea is to identify instantiation lemmas that are in \emph{conflict} with the current context, 
 %and consider such lemmas with higher priority than the others.
 
@@ -538,7 +538,7 @@ Data shown on a log-log scale.
 
 Figure~\ref{fig:results-inst-detail}
 gives a detailed summary of the impact of conflict-based instantiation in the SMT solver \cvc
-on the SMT-LIB, TPTP, and Isabelle benchmark libraries (further details are given in~\cite{}).
+on the SMT-LIB, TPTP, and Isabelle benchmark libraries (further details are given in~\cite{ReynoldsTinelliMoura14}).
 Firstly, column 3 shows that \cvc with conflict-based instantiation, as indicated by {\bf cvc4+ci},
 solves significantly more benchmarks with respect to \cvc without.
 In addition, it uses significantly fewer instantiations overall to solve these benchmarks.
@@ -554,8 +554,8 @@ Columns 6-11 give the percentage of instantiation rounds (IR) taken by the solve
 for which it returns instantiations based on E-matching, a conflicting instance,
 or propagating instance(s).
 It is interesting to note that conflicting instances are found by \cvc on
-X\% of instantiation rounds, a percentage that is relatively consistent across all three benchmark sets.
-When conflicting instances are not found, propagating instances are found on an additional X\% of instantiation rounds.
+XXX\% of instantiation rounds, a percentage that is relatively consistent across all three benchmark sets.
+When conflicting instances are not found, propagating instances are found on an additional XXX\% of instantiation rounds.
 The number of instantiations added by {\bf cvc4+ci} are by a wide margin those considered during E-matching.
 
 Figure~\ref{fig:cbqi-scatter} gives a scatter plot of the number of instantiations per individual benchmark
@@ -565,7 +565,7 @@ and in many cases only requires a handful of instantiations to solve benchmarks 
 requires thousands of instantiation lemmas.
 It is also interesting to note that several difficult benchmarks can be solved by {\bf cvc4}
 without resorting to E-matching at all.
-In particular, results from~\cite{} showed that XXX benchmarks could be solved {\bf cvc4+ci}
+In particular, results from~\cite{ReynoldsTinelliMoura14} showed that XXX benchmarks could be solved {\bf cvc4+ci}
 but not by {\bf z3} and {\bf cvc3} where it did not resort to E-matching at all.
 
 \subsection{Challenge: Finding Conflicting Instances}
@@ -601,8 +601,8 @@ and avoids exponential behavior at the cost of being more incomplete for finding
 We have seen that E-matching is an incomplete procedure,
 that is, when it terminates with no instantiation lemmas, this does not imply that our input is satisfiable.
 \emph{Model-based instantiation} is technique that addresses this shortcoming,
-which was introduced in the context of modern SMT solving in~\cite{},
-and has since been implemented in several solvers~\cite{}.
+which was introduced in the context of modern SMT solving in~\cite{GeDeM-CAV-09},
+and has since been implemented in several systems~\cite{Jacobs09,ReyEtAl-CADE-13}.
 
 With model-based quantifier instantiation, the basic idea is
 to construct a \emph{candidate model} $\I$ that satisfies $E$, 
@@ -646,8 +646,7 @@ until they are also a model of $Q$, or otherwise the SMT solver finds a conflict
 \subsection{Impact}
 Model-based instantiation often enables SMT solvers to
 establish the satisfiability of inputs where exhaustive instantiation is infeasible.
-For example,
-in~\cite{}, an implementation of model-based quantifier instantiation is used
+In~\cite{ReyEtAl-CADE-13}, an implementation of model-based quantifier instantiation is used
 in conjunction with finite model finding techniques in \cvc.
 Figure~\ref{fig:inst-mbqi} shows the impact of these techniques for the 1202
 benchmarks from the TPTP library that \cvc finds to be satisfiable.
@@ -696,16 +695,16 @@ It is worth noting when these solvers are guaranteed eventually to terminate.
 Approaches that incorporate model-based instantiation are clearly terminating
 when the domains of quantified formulas have a fixed finite interpretation
 such in quantified Boolean formulas (QBF)~\cite{},
-or quantified bit-vectors~\cite{}.
+or quantified bit-vectors~\cite{wintersteiger2013efficiently}.
 For quantified formulas over unintepreted sorts,
-finite model finding approaches~\cite{} are generally finite-model complete,
+finite model finding approaches~\cite{ReyEtAl-CADE-13} are generally finite-model complete,
 that is guarenteed to terminate with ``sat" when there exists a model that interprets
 all uninterpreted sorts as finite sets, and complete for fragments such as Bernays-Schonfinkel
 that exhibit a small model property.
 More generally, approaches for model-based quantifier instantiation are terminating in cases
 where it can be argued that only a finite number of instantiation lemmas will be returned before 
 a model is found.
-For example, the work of~\cite{} examines a class of formulas known as the essentially uninterpreted fragment,
+For example, the work of~\cite{GeDeM-CAV-09} examines a class of formulas known as the essentially uninterpreted fragment,
 where it can be argued that if a computation of the relevant domain of quantified formulas is finite,
 then an instantiation strategy can be made that is complete.
 This fragment includes some quantified formulas over infinite domains such as the integers.
@@ -726,7 +725,7 @@ but does not have a model where $f$ is almost constant.
 
 
 
-\section{Counterexample-Guided Instantiation}
+\section{Specialized Instantiation for Theories}
 \label{sec:cegqi}
 
 We have seen three classes of general-purpose techniques 
@@ -735,7 +734,7 @@ The common thread thus far has been that determining the satisfiability of unive
 of uninterpreted functions and theory symbols is challenging, and in fact is undecidable in general.
 However, when no uninterpreted function symbols are present and our background theory admits quantifier elimination, 
 e.g. linear real and integer arithmetic, then satisfiability 
-can be established by a quantifier elimination procedure~\cite{}.
+can be established by a quantifier elimination procedure~\cite{cooper1972,FerranteRackoff79ComputationalComplexityLogicalTheories,Loos93applyinglinear}.
 Recent work has adapted quantifier elimination techniques in the context of SMT solving~\cite{monniaux2010quantifier,ReynoldsDKBT15Cav,DBLP:conf/lpar/BjornerJ15},
 and has been implemented in SMT solvers
 as well as tools that use SMT solvers as a backend~\cite{komuravelli2014smt,DBLP:conf/lpar/FedyukovichGS15}.
@@ -809,7 +808,7 @@ where the bit-precise versions of arithmetic operators are part of the signature
 We expect analogous techniques for selecting instantiations to be helpful in this case.
 It has further yet to be determined how counterexample-guided instantiation techniques can be adapted
 for other theories such as non-linear arithmetic, unbounded character strings, finite sets, and floating points, 
-which a number of SMT solvers have recently added support for~\cite{}.
+which several SMT solvers now support.
 
 E-matching techniques
 are often highly effective and well-behaved for fragments where theory symbols are scarce.
