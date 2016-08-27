@@ -41,11 +41,19 @@ Department of Computer Science, The University of Iowa, USA
 %\pagestyle{empty}
 
 \begin{abstract}
-[SMT solvers]
-[Quantifier Instantiation]
-[Techniques for UF]
-[New techniques for theories]
-[Summary]
+Satisifiability Modulo Theories (SMT) solvers have
+emerged as prominent tools in formal methods applications.
+While originally targetted towards quantifier-free inputs,
+SMT solvers have gained significant use for quantified formulas in automated
+theorem proving and software verification.
+The most common technique for handling quantified formulas in modern SMT solvers
+in quantifier instantiation.
+This paper gives an overview of recent advances in quantifier instantiation in SMT.
+In addition to the well-known technique known as E-matching,
+we discuss the use of conflicts and models for 
+accelerating the search for (un)satisfiably.
+We further mention new instantiation-based techniques
+that are specialized to background theories such as linear real and integer arithmetic.
 \end{abstract}
 
 \section{Introduction}
