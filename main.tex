@@ -703,7 +703,7 @@ all uninterpreted sorts as finite sets, and complete for fragments such as Berna
 that exhibit a small model property.
 More generally, approaches for model-based quantifier instantiation are terminating in cases
 where it can be argued that only a finite number of instantiation lemmas will be returned before 
-a model is found.
+a model is found~\cite{}.
 For example, the work of~\cite{GeDeM-CAV-09} examines a class of formulas known as the essentially uninterpreted fragment,
 where it can be argued that if a computation of the relevant domain of quantified formulas is finite,
 then an instantiation strategy can be made that is complete.
@@ -744,9 +744,10 @@ We may alternatively consider a lazy quantifier \emph{instantiation} procedure f
 $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$ that considers instantiations of the form 
 $\neg \varphi[ \vec t_i, \vec k ]$ where $\vec t_i$ is one of $t_1, \ldots, t_n$.
 Assuming only instantiations of this form are considered by the procedure, it is terminating.
-Moreover, we may terminate as soon as we discover a set of instantiations $\{ \neg \varphi[ \vec t_{i1}, \vec k ], \ldots, \neg \varphi[ \vec t_{im}, \vec k ] \}$ that either
-$T$-unsatisfiable, or are $T$-satisfiable and entail $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$.
-An approach for doing so is given in~\cite{}, which selects instantiations based on the current set of constraints.
+Moreover, we may terminate as soon as we discover a set of instantiations 
+$\{ \neg \varphi[ \vec t_{i1}, \vec k ], \ldots, \neg \varphi[ \vec t_{im}, \vec k ] \}$ that is either
+$T$-unsatisfiable, or is $T$-satisfiable and entails $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$.
+An approach for doing so is given in~\cite{InstLA2016}, which selects instantiations based on the current set of constraints.
 \begin{example}
 
 \end{example}
@@ -789,8 +790,6 @@ $\funcqi( E, Q )$: \\
 \label{fig:smtqi}}
 \end{figure}
 
-\subsection{Future Work}
-
 There is room to improve upon current implementations of quantifier instantiation in SMT solvers,
 both in terms of engineering and theory.
 There are many design decisions behind all strategies mentioned in this paper, 
@@ -800,7 +799,7 @@ and if it can be efficiently applied in the presence of background theories.
 There is also potential for incorporating more advanced constructions 
 for model-based quantifier instantiation.
 
-Additionally, there are a number of opportunities to extend SMT solvers with efficient dedicated support for
+Additionally, there are opportunities to extend SMT solvers with efficient dedicated support for
 new fragments of first order logic of interest.
 For example, we have seen that specialized approaches for quantifier instantiation in the spirit of Section~\ref{sec:cegqi} 
 are highly effective for pure linear real and integer arithmetic~\cite{ReynoldsDKBT15Cav,DBLP:conf/lpar/BjornerJ15}.
