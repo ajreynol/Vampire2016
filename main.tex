@@ -664,6 +664,8 @@ To check whether $\I$ satisfies $\psi$, we check the satisfiability of:
 where $k$ is fresh constant.
 In other words, after simplification, we find that $\psi$ is not satisfied by $\I$ for all models of $k$ such that $k = a$.
 Model-based quantifier instantiation would subsequently return the instantiation lemma $\psi \Rightarrow P( a ) \vee R( a )$.
+Notice that this instantiation lemma is not satisfied by $\I$.
+Hence, we will be forced to choose a new candidate model if model-based quantifier instanatiation is invoked again.
 \qed
 \end{example}
 \begin{example}
@@ -734,7 +736,7 @@ when the domains of quantified formulas have a fixed finite interpretation
 such in quantified Boolean formulas (QBF)~\cite{janota2012solving},
 or quantified bit-vectors~\cite{wintersteiger2013efficiently}.
 For quantified formulas over unintepreted sorts,
-finite model finding approaches~\cite{ReyEtAl-CADE-13} are generally finite-model complete,
+finite model finding approaches~\cite{ReyEtAl-1-RR-13} are generally finite-model complete,
 that is guarenteed to terminate with ``sat" when there exists a model that interprets
 all uninterpreted sorts as finite sets, and complete for fragments
 that exhibit a small model property.
@@ -793,21 +795,57 @@ $\neg \varphi[ \vec t_i, \vec k ]$ where $\vec t_i$ is one of $t_1, \ldots, t_n$
 Assuming only instantiations of this form are considered by the procedure, it is terminating.
 Moreover, we may terminate as soon as we discover a set of instantiations 
 $\{ \neg \varphi[ \vec t_{i1}, \vec k ], \ldots, \neg \varphi[ \vec t_{im}, \vec k ] \}$ that is either
-$T$-unsatisfiable, or is $T$-satisfiable and entails $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$.
-An approach for doing so is given in~\cite{InstLA2016}.
+$T$-unsatisfiable, or is $T$-satisfiable and entails $\forall \vec x\, \neg \varphi[ \vec x, \vec k ]$,
+where ideally $m$ is much smaller than $n$.
 
-For linear arithmetic, a possible strategy for instantiation is the following.
-
+An approach for selecting instantiation lemmas based on models for the negation of quantified formulas
+over linear arithmetic is given in~\cite{InstLA2016}. 
+In this approach, the basic idea for instance selection is the following.
+Let $\psi$ be a quantified formula of the form $\forall x\, \varphi[ x ]$ where $\varphi$ is a quantifier-free formula over linear real arithmetic.
+First, find a model for $E \cup \neg \varphi[ k ]$ where $E$ is the current set of quantifier-free constraints known by the solver and $k$ is fresh real variable.
+If none exists, then $\psi$ is satisfied by all models of $E$.
+Otherwise, let $\{ k \geq t_1, \ldots, k \geq t_n \}$ be (equivalent to) atoms from $E \cup \neg \varphi[ k ]$ that are satisfied by $\I$,
+find the bound $k \geq t_i$ such that $t_i^\I \geq t_j^\I$ for all $j \neq i$,
+and return the instantiation lemma $\psi \Rightarrow \varphi[ t_i ]$.
+In other words, instantiations are selected based on the current maximal lower bound for $k$.
+Alternatively, we may add instantiations based on the current minimal upper bound.
 
 \begin{example}
+\label{ex:cegqi}
 Let $E$ be the set $\{ a=b+5 \}$ and let $\psi$ be $\forall x\, (x>a \vee x<b \vee x-c<3)$.
 Consider the set $E' = E \cup \{ k \leq a, k \geq b, k \geq c+3 \}$ where $k$ is a fresh variable.
 This set is satisfiable with a model $\I$ that interprets $a^\I = 5, b^\I = 0, c^\I = 0, k^\I = 3$.
-
+Consider the lower bounds for $k$ in set $E'$, and their interpretation in $\I$:
+\[
+\begin{array}{ccccc}
+k & \geq & b^\I & = & 0 \\
+k & \geq & (c+3)^\I & = & 3 \\
+\end{array}
+\]
+We find the term $c+3$ is the maximal lower bound for $k$ in $\I$,
+and return the instantatiation lemma $\psi \Rightarrow ( c+3>a \vee c+3<b \vee (c+3)-c<3 )$.
+Note that any model $\J$ satisfying $E'$ and this instantiation lemma is such that $b^\J > (c+3)^\J$,
+and hence $c+3$ will not be the maximal lower bound for $k$ for such a $\J$.
 \qed
 \end{example}
 
-[Results]
+The aforementioned approach for instantiation for linear arithmetic is often highly efficient as
+shown in~\cite{DBLP:conf/lpar/BjornerJ15,InstLA2016}.
+We have shown one option for selecting instantiations based on maximal lower or minimal upper bounds,
+which intuitively can be understood as a lazily enumerating the disjuncts in Loos and Weispfenning's method for quantifier elimination~\cite{Loos93applyinglinear}.
+Although not shown here, the instantiations returned by this approach may involve \emph{virtual terms} such as infinetessimals for dealing with cases where bounds on $k$ are strict,
+and infinities for dealing with cases where $k$ is unbounded.
+Another alternative for linear arithmetic is to instantiate with the midpoint of the
+maximal lower and upper bounds,
+which intuitively can be understood as enumerating disjuncts in Ferrante and Rackoff's method for quantifier elimination~\cite{FerranteRackoff79ComputationalComplexityLogicalTheories}.
+An instantiation strategy for linear integer arithmetic can be devised that adds constants to lower bounds to take into account divisibility constraints (for details, see~\cite{InstLA2016}),
+which simulates Cooper's method~\cite{cooper1972}.
+For other background theories such as fixed-width bit-vectors, 
+a naive instantiation-based approach can be devised that instantiates the original quantified formula based on the \emph{value} $k^\I$.
+In all of the aforemtnioned cases, we may argue that the set of possible instantiation lemmas returned by this strategy is finite.
+Hence, a terminating procedure for the satisfiability of quantified formulas in these theories based on lazy quantifier instantiation can be devised.
+
+%Conversely, the aforementioned instantiation strategy fails to be effective when uninterpreted functions are present.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -815,12 +853,17 @@ This set is satisfiable with a model $\I$ that interprets $a^\I = 5, b^\I = 0, c
 To summarize,
 we have seen strategies for quantifier instantiation
 based on heuristics, conflicts, and models.
-These are summarized in Figure~\ref{fig:smtqi},
-a strategy for quantifier instantiation may give priority to instantiations
-in the order the techniques are listed, that is, it prefers
-returning conflicting instances with highest priority, then heuristic instantiations,
-and finally instances that refine candidate models.
+%These are summarized in Figure~\ref{fig:smtqi},
+For quantified formula with uninterpreted functions,
+a strategy for quantifier instantiation may give highest priority to instantiations that
+are conflicting with the current satisfying assignment,
+subsequently give priority to instantiations returned by heuristics such as E-matching,
+and finally consider instances that refine candidate models.
+Quantified formulas in pure background theories such as linear arithmetic can be 
+decided by particular strategies for selecting instantiation lemmas, for instance
+based on candidate models and the current set of constraints known by the solver.
 
+\begin{comment}
 \begin{figure}[t]
 \begin{framed}
 $\funcqi( E, Q )$: \\
@@ -845,14 +888,15 @@ $\funcqi( E, Q )$: \\
 \caption{Summary of techniques for quantifier instantiation in SMT, as subprocedure of Figure~\ref{fig:smtq}.
 \label{fig:smtqi}}
 \end{figure}
+\end{comment}
 
 There is room to improve upon current implementations of quantifier instantiation in SMT solvers,
 both in terms of engineering and theory.
 There are many design decisions behind all strategies mentioned in this paper, 
 many of which are not mentioned here.
-For instance, it has yet to be explored how conflict-based instantiation can be implemented eagerly,
+It has yet to be explored how conflict-based instantiation can be implemented eagerly,
 and if it can be efficiently applied in the presence of background theories.
-There is also potential for incorporating more advanced constructions 
+There is also potential for incorporating shapes beyond almost constant functions
 for model-based quantifier instantiation.
 
 Additionally, there are opportunities to extend SMT solvers with efficient dedicated support for
@@ -861,12 +905,12 @@ For example, we have seen that specialized approaches for quantifier instantiati
 are highly effective for pure linear real and integer arithmetic~\cite{ReynoldsDKBT15Cav,DBLP:conf/lpar/BjornerJ15}.
 There is potential for improving support for quantified formulas over fixed-width bitvectors,
 where the bit-precise versions of arithmetic operators are part of the signature supported by many SMT solvers.
-We expect analogous techniques for selecting instantiations to be helpful in this case.
-It has further yet to be determined how counterexample-guided instantiation techniques can be adapted
-for other theories such as non-linear arithmetic, unbounded character strings, finite sets, and floating points, 
+We expect analogous techniques for selecting instantiations to be helpful here.
+It has further yet to be explored how instantiation techniques can be adapted
+for other theories such as unbounded character strings, finite sets, and floating points, 
 which several SMT solvers now support.
 
-E-matching techniques
+As mentioned, E-matching techniques
 are often highly effective and well-behaved for fragments where theory symbols are scarce.
 Conversely, recent techniques for quantifier instantiation are highly effective for quantifiers containing purely theory symbols.
 For tackling problems that depend both on reasoning about theories and uninterpreted functions,
