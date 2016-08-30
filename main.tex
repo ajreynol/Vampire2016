@@ -44,8 +44,8 @@ Department of Computer Science, The University of Iowa, USA
 Satisifiability Modulo Theories (SMT) solvers have
 emerged as prominent tools in formal methods applications.
 While originally targeted towards quantifier-free inputs,
-SMT solvers have gained significant use for quantified formulas in automated
-theorem proving and software verification.
+SMT solvers are now often used for handling quantified formulas in automated
+theorem proving and software verification applications.
 The most common technique for handling quantified formulas in modern SMT solvers
 in quantifier instantiation.
 This paper gives an overview of recent advances in quantifier instantiation in SMT.
@@ -64,17 +64,18 @@ and future work in this direction.
 
 
 The use of quantified formulas is highly important in a number of applications.
-Among these, in automated theorem proving applications~\cite{blanchette2013extending,bobot2011why3},
+In automated theorem proving applications~\cite{blanchette2013extending,bobot2011why3},
 quantified formulas often correspond to a set of background axioms,
 or to encode theories not natively supported by solvers.
 Quantified formulas also are used in software verification applications~\cite{DBLP:conf/icse/Leino04,DBLP:conf/itp/ChapmanS14},
 where they may be used for explicit function unfolding, or to reason about code by contracts.
-In synthesis, quantified formulas are also used to express synthesis conjectures that 
-specify universal properties for functions to synthesize.
-Similarly, in planning applications, quantified formulas are sometimes used to specified
+In synthesis, conjectures that specify universal properties for functions to synthesize are often expressed as formulas
+with one quantifier alternation.
+Finally, in planning applications, quantified formulas are sometimes used to specified
 that a desired plan must have certain properties for all relevant time points.
 
-Unfortunately, the satisfiability problem for quantified formulas is decidable in only limited cases.
+Unfortunately, the satisfiability problem for quantified formulas is highly challenging 
+and only decidable in limited cases.
 For example,
 the satisfiability problem for the Bernays-Shonfinkel class of formulas
 having quantifier prenex $\exists^\ast \forall^\ast$ and no function symbols
@@ -82,28 +83,27 @@ is NEXPTIME-complete;
 quantifier elimination algorithms can be used for deciding 
 formulas e.g. in pure linear real arithmetic in time that is worst-case doubly exponential in the number of quantifier blocks.
 Even worse, the general case of quantified formulas having uninterpreted function symbols is undecidable.
-In spite of the theoretical challenges, many quantified formulas that arise in practice
-can be handled efficiently due to the development of efficient algorithms 
-and advanced optimizations in modern automated theorem provers.
+%In spite of the theoretical challenges, many quantified formulas that arise in practice
+can be handled efficiently due to the development of efficient algorithms used by modern automated theorem provers.
 
 A growing number of modern tools exist for reasoning about first-order quantified formulas.
 A number of automated theorem provers
 such as Vampire~\cite{DBLP:conf/cav/KovacsV13}, E~\cite{schulz2002brainiac}, and SPASS~\cite{weidenbach2009spass}
 were developed to target quantified formulas in single-sorted first-order logic.
-More recently, these solvers have been extended with dedicated support for background theories~\cite{DBLP:conf/frocos/AlthausKW09,DBLP:conf/cade/BaumgartnerBW15}.
-For the most part, theorem provers from this community are superposition-based,
+More recently, these tools have been extended with dedicated support for background theories~\cite{DBLP:conf/frocos/AlthausKW09,DBLP:conf/cade/BaumgartnerBW15}.
+For the most part, tools from this community are superposition-based,
 although some are instantiation-based such as the Inst-Gen calculus used by iProver~\cite{ganzinger2003new}.
 A recent approach known as AVATAR~\cite{DBLP:conf/cade/RegerSV15} leverages support in SAT and SMT solvers for quantifier-free formulas
 in combination with a superposition-based theorem prover.
 
-In contrast to these provers, Satisfiability Modulo Theories (SMT) solvers such as CVC~\cite{stump2002cvc}, Yices~\cite{dutertre2006yices}, and Z3~\cite{Z3}, 
+In contrast to these tools, Satisfiability Modulo Theories (SMT) solvers such as CVC~\cite{stump2002cvc}, Yices~\cite{dutertre2006yices}, and Z3~\cite{Z3}, 
 were originally developed to target quantifier-free formulas in background theories,
 but have more recently been extended with support for universally quantified formulas.
 The approaches here are mostly instantiation-based based~\cite{Detlefs03simplify:a,MouraBjoerner07,GeBarrettTinelli07},
 although some approaches are based on superposition~\cite{de2008engineering}.
 
-This paper will focus primarily on recent techniques for quantifier instantiation in SMT solvers.
-In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers with support for quantified formulas.
+This paper overviews recent techniques for quantifier instantiation in SMT solvers.
+In Section~\ref{sec:quant}, we outline an abstract procedure used by most SMT solvers that support quantified formulas.
 We then focus on three general-purpose instantiation strategies for handling quantified formulas in SMT:
 \begin{itemize}
 \item Section~\ref{sec:ematching} will discuss \emph{heuristic} techniques for quantifier instantiation based on pattern-matching that
@@ -190,13 +190,13 @@ then it is also unsatisfiable modulo $T$ and we return ``unsat" in line 3.
 Otherwise, in the case that $\Gamma$ is satisfiable, the SAT solver will return a set of literals $M$ that propositionally entails it.
 We partition $M$ in line 4 into two parts $E$ and $Q$,
 where $E$ is quantifier-free and the atoms of literals in $Q$ are universally quantified formulas.
-In line 5, we check the $T$-satisfiability of quantifier-free part of $M$.
-If $M$ is unsatisfiable, then we add the clause $\neg C$ (often referred to as a conflict or blocking clause) to $\Gamma$ in line 6 and repeat,
+In line 5, we check the $T$-satisfiability of quantifier-free part $E$ of $M$.
+If this is unsatisfiable, then we add the clause $\neg C$ (often referred to as a conflict or blocking clause) to $\Gamma$ in line 6 and repeat,
 where $C$ is an unsatisfiable subset of $E$.
 If the quantifier-free portion is satisfiable,
 we proceed to Line 7, which invokes the abstract procedure $\funcqi$ on $E$ and $Q$.
 This procedure either will determine that $E \cup Q$ is $T$-satisfiable and return the pair $( \text{``sat"}, \emptyset )$,
-or otherwise will return ( ``unknown", $L$ ), where $L$ is a set of formulas that are valid in theory $T$,
+or otherwise will return ( ``unknown", $L$ ), where $L$ is a set of formulas that are valid in theory $T$ (often referred to as $T$-lemmas),
 after which the procedure $\funcsmtsolve$ either terminates with ``sat" or adds the set $L$ to $\Gamma$ and repeats.
 \begin{example}
 Consider the set of $\uflia$-formulas $\Gamma$:
@@ -219,7 +219,7 @@ satisfiable modulo $\uflia$, or add additional formulas to $\Gamma$.
 \qed
 \end{example}
 
-Support for quantified formulas in DPLL($T$)-based SMT solvers depend on how the function $\funcqi$ is implemented.
+Support for quantified formulas in DPLL($T$)-based SMT solvers depend primarily on how the function $\funcqi$ is implemented.
 We will examine such an implementation in this paper, in particular addressing the questions:
 \begin{itemize}
 \item What lemmas $L$ should we return?
@@ -313,7 +313,7 @@ E-matching in this example returns $\{ \psi \Rightarrow ( P( f( b ), c ) \Righta
 
 Recall in function $\funcqi$, we are interested in the (un)satisfiability of $E \cup Q$.
 As mentioned, E-matching selects instantiation lemmas based on pattern matching.
-It is typically very effective for establishing unsatisfiability.
+It is typically effective for establishing unsatisfiability.
 The intuition for its effectiveness is the following. 
 Let $\psi$ be a formula in $Q$ of the form $\forall \vec x\, \varphi[ p[ \vec x ], \vec x ]$, 
 that is, $p[ \vec x ]$ is a subterm of $\psi$,
@@ -349,7 +349,7 @@ we may either select $f( x )$ or $P( f( x ) )$, where the latter selection leads
 If no eligible term contains all the free variables in $\vec x$, then it selects a pattern consisting of multiple terms.
 These are often called \emph{multi-patterns}.
 For example, for $R( x, y ) \wedge R( y, z ) \Rightarrow R( x, z )$, then the set $\{ R( x, y ), R( y, z ) \}$ is a multi-pattern.
-E-matching would add an instance for this multi-pattern if it could find a substitution for $x, y, z$
+E-matching adds an instance for this multi-pattern if it could find a substitution for $x, y, z$
 that simultaneously matched both of these terms to ground terms in the current context.
 Multi-patterns tend to lead to many instantiations, and hence they tend to be chosen with lower priority.
 It is yet to be explored how recent techniques for literal selection in automated theorem provers~\cite{DBLP:conf/cade/HoderR0V16}
@@ -485,15 +485,15 @@ We may find instantiations that are conflicting while taking into account equali
 Let $E$ be $\{ a \neq c, f( b ) = b, g( b ) = a, f( a ) = a, h( f( a ) ) = d, h( b ) =c \}$ and let $\psi$ be
 $\forall x\, f( g( x ) ) = h( f( x ) )$. 
 The instance $f( g( b ) ) = h( f( b ) )$ is a conflicting instance for $( E, \{ \psi \} )$,
-by noting that it is an instance of $\psi$,
+by noting
 $E \models_\euf f( g( b ) ) = a \wedge h( f( b ) ) = c \wedge a \neq c$
 and hence $E, f( g( b ) ) = h( f( b ) ) \models_\euf \bot$.
 \qed
 \end{example}
 It is also helpful to distinguish other instances that are relevant to the satisfiability of $E \cup Q$,
 by noting which ones entail equalities between ground terms in $E$.
-This behavior is analogous to that of quantifier-free theory solvers, which often employ
-theory propagation techniques for inferring equalities that prune the search space.
+This behavior is analogous to that of quantifier-free theory solvers, which often use
+theory propagation techniques for inferring equalities that prune search space.
 \begin{example}
 Consider the sets $E$ and $\psi$ from the previous example, but where $a \neq c$ does not occur in $E$.
 In this case, $f( g( b ) ) = h( f( b ) )$ is no longer a conflicting instance for $( E, \{ \psi \} )$.
@@ -586,7 +586,7 @@ or propagating instance(s).
 It is interesting to note that conflicting instances are found by {\bf cvc4+ci} on
 74.5\% of instantiation rounds, a percentage that is relatively consistent across all three benchmark sets.
 When conflicting instances are not found, propagating instances are found on an additional 5.1\% of instantiation rounds.
-A vast majority of the instantiations added by {\bf cvc4+ci} are added as a result of E-matching (>99\%).
+A vast majority of the instantiations added by {\bf cvc4+ci} are added as a result of E-matching ($>$99\%).
 
 Figure~\ref{fig:cbqi-scatter} gives a scatter plot of the number of instantiations per individual benchmark
 across all three sets, where the data is shown on a log scale.
@@ -620,7 +620,7 @@ theory of uninterpreted functions and linear integer arithmetic.
 \end{example}
 In general, finding conflicting instances can be expensive, 
 both because checking entailment modulo theories may be time consuming,
-and because finding conflicting instances in the presence of background theories (as demonstrated in Example~\ref{ex:conflict-uflia}) is often not obvious.
+and because finding conflicting instances in the presence of background theories is often not obvious (as demonstrated in Example~\ref{ex:conflict-uflia}).
 For these reasons,
 the implementation of conflict-based instantiation in \cvc
 considers entailment only modulo equality and uninterpreted functions,
@@ -645,7 +645,7 @@ To check whether an interpretation $\I$ satisfies a quantified formula $\forall 
 it suffices to show that the quantifier-free formula $\neg \varphi^\I[ \vec k ]$ is \emph{unsatisfiable},
 where $\varphi^\I$ is the result of replacing each uninterpreted function in $\varphi$
 by its interpretation in $\I$.
-If $\neg \varphi^\I[ \vec k ]$ is \emph{satisfiable}, we add an instantiation based on the interpretation of $k$ in a model
+If $\neg \varphi^\I[ \vec k ]$ is \emph{satisfiable}, we return an instantiation lemma based on the interpretation of $k$ in a model
 for this formula.
 
 \begin{example}
@@ -668,8 +668,8 @@ where $k$ is fresh constant.
 In other words, after simplification, we find that $\psi$ is not satisfied by $\I$ for all values of $k$ such that $k = a$.
 Model-based quantifier instantiation would subsequently return the instantiation lemma $\psi \Rightarrow P( a ) \vee R( a )$.
 Notice that this instantiation lemma is not satisfied by $\I$.
-In the context of Figure~\ref{fig:smtq}, 
-the solver will be forced to choose a new candidate model if model-based quantifier instantiation is invoked again.
+Hence, the solver will be forced to choose a new candidate model 
+if model-based quantifier instantiation is invoked again.
 \qed
 \end{example}
 \begin{example}
@@ -732,7 +732,7 @@ as demonstrated by the points in the plot occurring below the solid line.
 \subsection{Completeness}
 We have now seen that SMT solvers may answer ``unsat" using quantifier instantiation
 when they discover a finite set of instances that are collectively unsatisfiable at the quantifier free,
-and SMT solvers may answer ``sat" if they discover a candidate model that satisfies all quantified formulas.
+and may answer ``sat" if they discover a candidate model that satisfies all quantified formulas.
 It is worth noting when these solvers are guaranteed to terminate.
 
 Approaches that incorporate model-based instantiation are clearly terminating
@@ -852,8 +852,7 @@ Hence, a terminating procedure for the satisfiability of quantified formulas in 
 \section{Conclusion}
 \label{sec:conclusion}
 
-To summarize,
-we have seen strategies for quantifier instantiation
+We have seen strategies for quantifier instantiation
 based on heuristics, conflicts, and models.
 %These are summarized in Figure~\ref{fig:smtqi},
 For quantified formula with uninterpreted functions,
