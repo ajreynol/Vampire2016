@@ -43,7 +43,7 @@ Department of Computer Science, The University of Iowa, USA
 \begin{abstract}
 Satisifiability Modulo Theories (SMT) solvers have
 emerged as prominent tools in formal methods applications.
-While originally targetted towards quantifier-free inputs,
+While originally targeted towards quantifier-free inputs,
 SMT solvers have gained significant use for quantified formulas in automated
 theorem proving and software verification.
 The most common technique for handling quantified formulas in modern SMT solvers
@@ -70,7 +70,7 @@ or to encode theories not natively supported by solvers.
 Quantified formulas also are used in software verification applications~\cite{DBLP:conf/icse/Leino04,DBLP:conf/itp/ChapmanS14},
 where they may be used for explicit function unfolding, or to reason about code by contracts.
 In synthesis, quantified formulas are also used to express synthesis conjectures that 
-specify universal properties for functions to syntesize.
+specify universal properties for functions to synthesize.
 Similarly, in planning applications, quantified formulas are sometimes used to specified
 that a desired plan must have certain properties for all relevant time points.
 
@@ -83,7 +83,7 @@ quantifier elimination algorithms can be used for deciding
 formulas e.g. in pure linear real arithmetic in time that is worst-case doubly exponential in the number of quantifier blocks.
 Even worse, the general case of quantified formulas having uninterpreted function symbols is undecidable.
 In spite of the theoretical challenges, many quantified formulas that arise in practice
-can be handled efficiently due to the delevopment of efficient algorithms 
+can be handled efficiently due to the development of efficient algorithms 
 and advanced optimizations in modern automated theorem provers.
 
 A growing number of modern tools exist for reasoning about first-order quantified formulas.
@@ -134,7 +134,7 @@ Otherwise, it returns a subset $C$ of $M$ that is unsatisfiable modulo the backg
 which is often referred to as a conflict clause.
 \end{comment}
 These solvers have also been extended 
-in the past decade with approaches for univeral and existential quantification~\cite{Detlefs03simplify:a,MouraBjoerner07,GeBarrettTinelli07}.
+in the past decade with approaches for universal and existential quantification~\cite{Detlefs03simplify:a,MouraBjoerner07,GeBarrettTinelli07}.
 For consistency, in this paper we assume all existential quantification is rewritten to universal quantification:
 \[
 \exists \vec x\, P( \vec x ) \transform \neg \forall \vec x\, \neg P( \vec x )
@@ -259,7 +259,7 @@ The most widely used technique for quantifier instantiation in SMT a heuristic t
 It was originally introduced in the Ph.D. thesis of Greg Nelson~\cite{Nelson:1980:TPV:909447}.
 Recently, variants of the approach have been implemented in a number of solvers~\cite{Detlefs03simplify:a,DBLP:conf/cav/BarrettT07,Z3,DBLP:conf/cade/BoutonODF09,CVC4-CAV-11,DBLP:conf/lpar/Rummer12}.
 The support for E-matching in these solvers is critical to the success of high-level tools for 
-software verfication~\cite{DBLP:conf/icse/Leino04,DBLP:conf/itp/ChapmanS14} and automated theorem proving~\cite{blanchette2013extending,bobot2011why3}.
+software verification~\cite{DBLP:conf/icse/Leino04,DBLP:conf/itp/ChapmanS14} and automated theorem proving~\cite{blanchette2013extending,bobot2011why3}.
 E-matching chooses instances for quantified formulas $\forall \vec x\, \varphi$
 based on \emph{pattern terms} whose free variables are $\vec x$.
 We will write $p[ \vec x ]$ to denote a term whose free variables are $\vec x$.
@@ -350,7 +350,7 @@ If no eligible term contains all the free variables in $\vec x$, then it selects
 These are often called \emph{multi-patterns}.
 For example, for $R( x, y ) \wedge R( y, z ) \Rightarrow R( x, z )$, then the set $\{ R( x, y ), R( y, z ) \}$ is a multi-pattern.
 E-matching would add an instance for this multi-pattern if it could find a substitution for $x, y, z$
-that simulatenously matched both of these terms to ground terms in the current context.
+that simultaneously matched both of these terms to ground terms in the current context.
 Multi-patterns tend to lead to many instantiations, and hence they tend to be chosen with lower priority.
 It is yet to be explored how recent techniques for literal selection in automated theorem provers~\cite{DBLP:conf/cade/HoderR0V16}
 relate to pattern selection in SMT solvers.
@@ -412,7 +412,7 @@ In absence of further heuristics, lemmas of this form will be added indefinitely
 The aforementioned case is often referred to as a \emph{matching loop}.
 Matching loops may be avoided by
 restricting pattern selection, or by
-considering instantiations in a bredth-first manner by tracking a ``level" on the terms introduced by instantiations~\cite{GeBarrettTinelli07}.
+considering instantiations in a breadth-first manner by tracking a ``level" on the terms introduced by instantiations~\cite{GeBarrettTinelli07}.
 
 \subsection{Challenge: Incompleteness}
 
@@ -421,7 +421,7 @@ this does not imply that $E \cup Q$ is satisfiable, as demonstrated in the follo
 
 \begin{example}
 Let $E$ be $\emptyset$ and let $Q = \{ \forall x\, P( x ), \forall x\, \neg P( x ) \}$.
-Any pattern selection for the quantified formuls in $Q$ will fail to produce any instantiation lemmas,
+Any pattern selection for the quantified formulas in $Q$ will fail to produce any instantiation lemmas,
 since there are no ground terms in $E$.
 However, $Q$ clearly is $T$-unsatisfiable.
 \qed
@@ -492,7 +492,7 @@ and hence $E, f( g( b ) ) = h( f( b ) ) \models_\euf \bot$.
 \end{example}
 It is also helpful to distinguish other instances that are relevant to the satisfiability of $E \cup Q$,
 by noting which ones entail equalities between ground terms in $E$.
-This behavior is analagous to that of quantifier-free theory solvers, which often employ
+This behavior is analogous to that of quantifier-free theory solvers, which often employ
 theory propagation techniques for inferring equalities that prune the search space.
 \begin{example}
 Consider the sets $E$ and $\psi$ from the previous example, but where $a \neq c$ does not occur in $E$.
@@ -640,7 +640,7 @@ to construct a \emph{candidate model} $\I$ that satisfies $E$,
 and then check whether $\I$ satisfies $Q$ as well.
 In other words, $\I$ contains a complete interpretation for all free constants and uninterpreted functions occurring in $E$ and $Q$.
 Constructing an interpretation that satisfies the quantifier-free constraints in $E$
-is typically guarenteed since decision procedures for quantifier-free inputs in SMT tend to produce models.
+is typically guaranteed since decision procedures for quantifier-free inputs in SMT tend to produce models.
 To check whether an interpretation $\I$ satisfies a quantified formula $\forall \vec x\, \varphi[ \vec x ]$ where $\varphi$ is quantifier-free,
 it suffices to show that the quantifier-free formula $\neg \varphi^\I[ \vec k ]$ is \emph{unsatisfiable},
 where $\varphi^\I$ is the result of replacing each uninterpreted function in $\varphi$
@@ -669,7 +669,7 @@ In other words, after simplification, we find that $\psi$ is not satisfied by $\
 Model-based quantifier instantiation would subsequently return the instantiation lemma $\psi \Rightarrow P( a ) \vee R( a )$.
 Notice that this instantiation lemma is not satisfied by $\I$.
 In the context of Figure~\ref{fig:smtq}, 
-the solver will be forced to choose a new candidate model if model-based quantifier instanatiation is invoked again.
+the solver will be forced to choose a new candidate model if model-based quantifier instantiation is invoked again.
 \qed
 \end{example}
 \begin{example}
@@ -730,7 +730,7 @@ and often adding far fewer than the number of possible instantiations before ter
 as demonstrated by the points in the plot occurring below the solid line.
 
 \subsection{Completeness}
-We have now seen that SMT solvers may answer ``unsat" using quantifier instantatiation
+We have now seen that SMT solvers may answer ``unsat" using quantifier instantiation
 when they discover a finite set of instances that are collectively unsatisfiable at the quantifier free,
 and SMT solvers may answer ``sat" if they discover a candidate model that satisfies all quantified formulas.
 It is worth noting when these solvers are guaranteed to terminate.
@@ -741,7 +741,7 @@ such in quantified Boolean formulas (QBF)~\cite{janota2012solving},
 or quantified bit-vectors~\cite{wintersteiger2013efficiently}.
 For quantified formulas over unintepreted sorts,
 finite model finding approaches~\cite{ReyEtAl-1-RR-13} are generally finite-model complete,
-that is guarenteed to terminate with ``sat" when there exists a model that interprets
+that is guaranteed to terminate with ``sat" when there exists a model that interprets
 all uninterpreted sorts as finite sets, and are complete for fragments
 that exhibit a small model property.
 More generally, approaches for model-based quantifier instantiation are terminating in cases
@@ -825,7 +825,7 @@ k & \geq & (c+3)^\I & = & 3 \\
 \end{array}
 \]
 We find the term $c+3$ is the maximal lower bound for $k$ in $\I$,
-and return the instantatiation lemma $\psi \Rightarrow ( c+3>a \vee c+3<b \vee (c+3)-c<3 )$.
+and return the instantiation lemma $\psi \Rightarrow ( c+3>a \vee c+3<b \vee (c+3)-c<3 )$.
 Note that any model $\J$ satisfying $E'$ and this instantiation lemma is such that $b^\J > (c+3)^\J$,
 and hence $c+3$ will not be the maximal lower bound for $k$ for such a $\J$.
 \qed
@@ -835,7 +835,7 @@ In practice,
 The aforementioned approach for instantiation for linear arithmetic often terminates well before considering the worst-case number of instantiations~\cite{DBLP:conf/lpar/BjornerJ15,InstLA2016}.
 Here, we have shown one option for selecting instantiations based on maximal lower or minimal upper bounds,
 which intuitively can be understood as a lazily enumerating the disjuncts in Loos and Weispfenning's method for quantifier elimination~\cite{Loos93applyinglinear}.
-Although not shown here, the instantiations returned by this approach may involve \emph{virtual terms} such as infinetessimals for dealing with cases where bounds on $k$ are strict,
+Although not shown here, the instantiations returned by this approach may involve \emph{virtual terms} such as infinitesimals for dealing with cases where bounds on $k$ are strict,
 and infinities for dealing with cases where $k$ is unbounded.
 Another alternative for linear arithmetic is to instantiate with the midpoint of the
 maximal lower and upper bounds,
@@ -911,7 +911,7 @@ and how this combination can be implemented in practice.
 
 Additionally, there are opportunities to extend SMT solvers with efficient dedicated support for
 new fragments of first order logic of interest, including pure quantified formulas in additional background theories.
-There is potential for improving support for quantified formulas over fixed-width bitvectors,
+There is potential for improving support for quantified formulas over fixed-width bit-vectors,
 where the bit-precise versions of arithmetic operators are part of the signature supported by many SMT solvers.
 We expect analogous techniques for selecting instantiations in the spirit of Section~\ref{sec:cegqi} to be helpful here.
 It has further yet to be explored how instantiation techniques can be adapted
