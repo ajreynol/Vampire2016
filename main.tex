@@ -1,5 +1,5 @@
-\documentclass[oribibl]{llncs}
-
+%\documentclass[oribibl]{llncs}
+\documentclass{easychair}
 %\usepackage{pslatex}
 
 \usepackage{times}
@@ -9,7 +9,7 @@
 \usepackage{mathpartir} % ./
 \usepackage{color}
 \usepackage{xspace} 
-\usepackage[pdftex]{graphicx}
+%\usepackage[pdftex]{graphicx}
 %\usepackage[small]{caption}
 \usepackage{fancybox}
 \usepackage{url}
@@ -41,7 +41,7 @@ Department of Computer Science, The University of Iowa, USA
 %\pagestyle{empty}
 
 \begin{abstract}
-Satisifiability Modulo Theories (SMT) solvers have
+Satisfiability Modulo Theories (SMT) solvers have
 emerged as prominent tools in formal methods applications.
 While originally targeted towards quantifier-free inputs,
 SMT solvers are now often used for handling quantified formulas in automated
@@ -519,7 +519,8 @@ but will spend more time per lemma added.
 
 \begin{figure}[t]
 \centering
-{%\scriptsize
+\resizebox{\columnwidth}{!}{$
+%\scriptsize
 \begin{tabular}{|r|r|c|cc|cc|cc|cc|}
 \hline
   &  & & & & \multicolumn{2}{c|}{E-matching}  & \multicolumn{2}{c|}{Conflicting}  & \multicolumn{2}{c|}{Propagating}
@@ -543,8 +544,7 @@ but will spend more time per lemma added.
 \\
 \hline
 \end{tabular}
-\\
-}
+$}
 \caption{
 Details on unsatisfiable benchmarks solved, and instances constructed by \cvc with and without conflict-based instantiation.
 }
