@@ -209,7 +209,7 @@ Subsequently, line 4 considers the original atoms these variables correspond to,
 $M = E \uplus Q = \{ \neg P( a ) \} \uplus \{ \forall x\, R( x ) \}$.
 On line 5, we check if $E$ is satisfiable.
 Since $E$ is $T$-satisfiable in this case, on line 7
-we invoke $\funcqi$ on $E, Q$, which will either determine this set is
+we invoke $\funcqi$ on $(E, Q)$, which will either determine this set is
 satisfiable modulo $\uflia$, or add additional formulas to $\Gamma$. 
 %DPLL(T) then checks the satisfiability of $\{ \neg P(a), \forall x\, R( x ) \}$ modulo $\uflia$.
 \qed
@@ -244,7 +244,7 @@ Lemmas of the second type, which we refer to as \emph{instantiation lemmas},
 infer an instance of a universally quantified formula for some tuple of ground terms $\vec{ t }$.
 In contrast, multiple lemmas of this form may be added per quantified formula.
 Unlike techniques for clause selection in automated theorem provers~\cite{DBLP:conf/cade/SchulzM16},
-typical strategies add instantiation lemmas for \emph{all} quantified formulas in $Q$ whenever $\funcqi$ is invoked.
+typical strategies may add instantiation lemmas for \emph{all} quantified formulas in $Q$ simultaneously whenever $\funcqi$ is invoked.
 The performance of the solver is highly dependent on a having a good strategy for selecting such instantiation lemmas.
 We examine various strategies for selecting instantiation lemmas in Sections~\ref{sec:ematching}-~\ref{sec:cegqi}.
 
@@ -834,12 +834,12 @@ which intuitively can be understood as a lazily enumerating the disjuncts in Loo
 Although not shown here, the instantiations returned by this approach may involve \emph{virtual terms} such as infinitesimals for dealing with cases where bounds on $k$ are strict,
 and infinities for dealing with cases where $k$ is unbounded.
 Another alternative for linear arithmetic is to instantiate with the midpoint of the
-maximal lower and upper bounds,
+maximal lower and minimal upper bounds,
 which can be understood as enumerating disjuncts in Ferrante and Rackoff's method for quantifier elimination~\cite{FerranteRackoff79ComputationalComplexityLogicalTheories}.
 An instantiation strategy for linear integer arithmetic can be devised that adds constants to lower bounds to take into account divisibility constraints (for details, see~\cite{InstLA2016}),
 which simulates Cooper's method~\cite{cooper1972}.
 For other background theories such as fixed-width bit-vectors, 
-a naive instantiation-based approach can be devised that instantiates the original quantified formula based on the \emph{value} $k^\I$.
+a naive approach can be devised that instantiates the original quantified formula based on the \emph{value} $k^\I$.
 In all of the aforementioned cases, we may argue that the set of possible instantiation lemmas returned by this strategy is finite.
 Hence, a terminating procedure for the satisfiability of quantified formulas in these theories based on lazy quantifier instantiation can be devised.
 
